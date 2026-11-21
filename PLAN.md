@@ -23,7 +23,7 @@ Status as of 21 November 2026. Checked boxes are finished; unchecked boxes are s
 - [x] Wordmark and icon, as SVG and PNG, in `thread-backend/assets/`, specified in `BRAND.md`
 - [x] No signing team is stored in the project
 
-## 3. Glasses without a display — code done, untested on hardware
+## 3. Glasses without a display — done, run on real glasses
 
 The app is written for Meta Ray-Ban Display glasses, but it also has to work with Meta glasses that have no screen.
 
@@ -33,16 +33,16 @@ The app is written for Meta Ray-Ban Display glasses, but it also has to work wit
 - [x] The app compiles with the change
 - [x] Meta SDK upgraded from 0.8.0 to 1.1.0; it needs glasses software V130 or later and Meta AI app V292 or later
 - [x] The camera keeps streaming over Bluetooth Classic, the only connection a free Apple Account can use for it (see the note in `project.yml`)
-- [ ] Try it on real glasses: photo from the glasses camera, and the spoken line through the glasses speakers
+- [x] Try it on real glasses: photo from the glasses camera, and the spoken line through the glasses speakers
 
-### Listening through the glasses — code done, untested on hardware
+### Listening through the glasses — done, run on real glasses
 
 - [x] Switch in Glasses (Listen Through Glasses), off by default: also transcribe what the glasses' microphones hear, and use whichever transcript has more words
 - [x] If the glasses refuse or end a stream that carries audio, or it never starts, the camera carries on without it and Glasses says why. Checked with the simulated glasses, which do not send audio
 - [ ] On real glasses, check that Glasses → Diagnostics reports audio arriving ("Last capture: … s of audio from the glasses"). It may not over Bluetooth Classic; a public report of it working used Wi-Fi, which needs a paid Apple Developer account
 - [ ] On real glasses, check the spoken line still plays with the switch on. One developer reported that sound to the glasses stops while a stream carries audio
 
-### Starting from the glasses — code done, untested on hardware
+### Starting from the glasses — done, run on real glasses
 
 - [x] Switch in Glasses (Buttons Start Meet), on by default: the capture button or a double tap on the temple starts Meet, and another press ends its listening. Uses the SDK's Inputs capability. Checked with the simulated glasses, including after a pause and a resume
 - [x] A single tap on the temple is no longer treated as Meet; it pauses the glasses, as Meta intends
@@ -53,7 +53,7 @@ The app is written for Meta Ray-Ban Display glasses, but it also has to work wit
 - [x] Your Name (Glasses › You) goes with every conversation, and the backend never files the wearer as the contact; known names are given to both recognisers as hints
 - [x] Include the Moment Before (Glasses › Listening, off by default): the last 5 or 10 s of the phone's microphone, kept in memory only, go in front of the next Meet
 - [x] Found why the glasses' microphone audio transcribed to nothing: only one on-device recogniser runs at a time, so the phone's stopped the glasses' 0.09 s in. The kept copy is transcribed once the turn ends (8.4 s in 0.4 s, 11 words on real glasses)
-- [x] The backend's language tasks use NVIDIA Nemotron (merged from its own branch); not yet run against a real endpoint
+- [x] The backend's language tasks use NVIDIA Nemotron (merged from its own branch), run on a real vLLM server
 - [ ] Rebuild each conversation as you/them from both microphones with Nemotron, and file each person's part under them
 - [x] On real Ray-Ban Meta (Gen 2) glasses: registration through Developer Mode, a session once the glasses are worn, a photo from the glasses camera, on-device speech recognition on the phone, a new face added, and the capture button starting and ending Meet
 - [x] A session the glasses end is shown as not connected, instead of staying "connected"
@@ -73,7 +73,7 @@ The app is written for Meta Ray-Ban Display glasses, but it also has to work wit
 - [ ] Listening. In the Simulator the app opens the Mac's microphone, but Apple's speech recognition does not start there (its speech model is not in the Simulator, and the app now says so), so Meet has still not heard anything anywhere. That needs an iPhone. Typed text stands in for it
 - [ ] The spoken line. It is played in the Simulator, through the Mac, and nobody has yet confirmed hearing it
 - [ ] The app on a real phone
-- [ ] Pairing with real glasses
+- [x] Pairing with real glasses
 
 ## 5. Still to do
 

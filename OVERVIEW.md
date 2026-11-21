@@ -2,7 +2,7 @@
 
 This document describes what the iOS app in this repo actually does, based on a full read of the source. Where the in-app guide (Glasses → How Thread Works) says something different from the code, the code is what is described here, and the differences are listed in [Where the docs and the code disagree](#where-the-docs-and-the-code-disagree).
 
-The app has been run in the iOS Simulator with Meta's simulated glasses (see [Running with simulated glasses](#running-with-simulated-glasses)). Nothing here was verified on a phone or with real glasses. The backend it talks to lives in `thread-backend/` and is documented in [its own README](thread-backend/README.md); its endpoints have been exercised with tests and over HTTP.
+The app has been run in the iOS Simulator with Meta's simulated glasses (see [Running with simulated glasses](#running-with-simulated-glasses)). It has also been run on an iPhone 16 Pro with real Ray-Ban Meta glasses (Gen 2, no display). The backend it talks to lives in `thread-backend/` and is documented in [its own README](thread-backend/README.md); its endpoints have been exercised with tests and over HTTP.
 
 ## In one paragraph
 
@@ -96,7 +96,7 @@ Chosen under **Stop Listening** in Meet's More menu and kept in `UserDefaults` (
 
 ### Listening through the glasses as well (experimental)
 
-Off by default; the switch is **Listen Through Glasses** in the Glasses tab. It has compiled but has never been run on glasses.
+Off by default; the switch is **Listen Through Glasses** in the Glasses tab. It has been run on real glasses.
 
 - With it on, the camera stream is opened with audio (16 kHz mono), which is a separate path from the Bluetooth headset microphone and is not narrowed to the wearer's voice. The glasses must first grant their own microphone permission in the Meta AI app, which the app asks for while connecting.
 - `GlassesEar` feeds that audio to a second speech recogniser while the phone's microphone is transcribed as usual. iOS records from one input at a time, so this is the only way to have both.
@@ -126,7 +126,7 @@ Tapping **Connect** in the Glasses tab does the following, reporting each step i
 5. Waits up to about 12 s for the selected glasses to become the active device.
 6. Creates and starts one `DeviceSession`. On glasses with a display it then attaches the display capability, and lens cards are only sent once the display reports `.started`. On glasses without one it skips that step: the Lens panel reads "no display", nothing is sent to the lens, and cards are spoken and shown in the app.
 
-The spoken line is ordinary phone audio. It plays through the glasses speakers when the glasses are the iPhone's Bluetooth audio output, and through the phone speaker otherwise. The no-display path compiles but has not been run on real glasses.
+The spoken line is ordinary phone audio. It plays through the glasses speakers when the glasses are the iPhone's Bluetooth audio output, and through the phone speaker otherwise. The no-display path has been run on real glasses.
 
 **Reconnect Glasses** (in Glasses → Diagnostics) tears everything down and repeats this without restarting the app.
 
@@ -134,7 +134,7 @@ After connecting, the app keeps following the session's state. If the glasses st
 
 ### Starting a capture from the glasses
 
-On by default; the switch is **Buttons Start Meet** in the Glasses tab. It uses the SDK's Inputs capability (`MWDATInputs`, `DeviceSession.addInputs`), which Meta offers to apps in development and beta release channels only; an app reached through Developer Mode in the Meta AI app is one. It works with Meta's simulated glasses. It has never been run on real ones.
+On by default; the switch is **Buttons Start Meet** in the Glasses tab. It uses the SDK's Inputs capability (`MWDATInputs`, `DeviceSession.addInputs`), which Meta offers to apps in development and beta release channels only; an app reached through Developer Mode in the Meta AI app is one. It works with Meta's simulated glasses, and has been run on real ones with the capture button.
 
 - A short press of the capture button, a double tap on the temple (`select` from the touchpad) or the action button, on glasses that have one, runs the same pass as the Meet button. While Meet is listening, the same press ends the turn, as Done does.
 - A double press of the capture button arrives as a short press and then a double press (a known issue in Meta's documentation), so a short press waits 0.45 s and the pair counts once. Holding the button counts as a press.
