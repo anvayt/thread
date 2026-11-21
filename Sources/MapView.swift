@@ -27,6 +27,11 @@ struct MapView: View {
             if let url {
                 BackendPage(url: url, reloads: reloads + passwordChanges, loading: $loading, problem: $problem)
                     .opacity(problem == nil ? 1 : 0)
+                    // The map runs under the status bar and the glass tab bar,
+                    // like Maps; the page keeps its controls clear of them with
+                    // the safe-area insets. Not the keyboard's: that still
+                    // shortens the page, so the ask field stays above it.
+                    .ignoresSafeArea(.container, edges: .vertical)
             }
             if let problem {
                 ContentUnavailableView {
