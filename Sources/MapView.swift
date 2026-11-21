@@ -71,6 +71,11 @@ private struct BackendPage: UIViewRepresentable {
         view.backgroundColor = .clear
         view.scrollView.backgroundColor = .clear
         view.allowsBackForwardNavigationGestures = false
+        // The page fills the view and scrolls nothing itself; the safe areas
+        // are SwiftUI's to handle.
+        view.scrollView.contentInsetAdjustmentBehavior = .never
+        view.scrollView.bounces = false
+        context.coordinator.watchKeyboard(of: view)
         context.coordinator.load(url, in: view, reloads: reloads)
         return view
     }
@@ -85,8 +90,27 @@ private struct BackendPage: UIViewRepresentable {
         private var loadedURL: URL?
         private var loadedReloads = -1
 
+        private var keyboardHidden: NSObjectProtocol?
+
         init(_ parent: BackendPage) {
             self.parent = parent
+        }
+
+        deinit {
+            if let keyboardHidden { NotificationCenter.default.removeObserver(keyboardHidden) }
+        }
+
+        /// While the keyboard is up, WebKit scrolls the page to keep the ask
+        /// field in sight, and doesn't always scroll it back. When the keyboard
+        /// has gone, put the page back where it belongs.
+        func watchKeyboard(of view: WKWebView) {
+            keyboardHidden = NotificationCenter.default.addObserver(
+                forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main
+            ) { [weak view] _ in
+                guard let scroll = view?.scrollView else { return }
+                if scroll.zoomScale != 1 { scroll.setZoomScale(1, animated: true) }
+                if scroll.contentOffset != .zero { scroll.setContentOffset(.zero, animated: true) }
+            }
         }
 
         /// Loads only when the address or the reload count changed.

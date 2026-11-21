@@ -254,8 +254,13 @@ struct LookupCardSection: View {
             if !card.topics.isEmpty {
                 labelled("Topics", card.topics.joined(separator: ", "))
             }
-            if !card.followups.isEmpty {
-                labelled("You Owe Them", card.followups.joined(separator: "\n"))
+            let mine = FollowUp.mine(card.followups)
+            if !mine.isEmpty {
+                labelled("You Owe Them", mine.joined(separator: "\n"))
+            }
+            let theirs = FollowUp.theirs(card.followups)
+            if !theirs.isEmpty {
+                labelled("They Owe You", theirs.joined(separator: "\n"))
             }
         } header: {
             Text(card.date, style: .time)

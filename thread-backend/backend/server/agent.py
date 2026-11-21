@@ -122,17 +122,20 @@ def _clip(text: str, limit: int) -> str:
 
 
 def owed_by(text: str) -> str:
-    """Who owes a follow-up, read from its wording: "them" when the other
-    person said they would ("send you our demo"), "you" when the wearer did
-    ("send them the repo link") or was asked to ("send me the deck"), "" when
-    the wording doesn't say."""
+    """Who owes a follow-up, read from its wording: "you" when the wearer
+    said they would ("send them the repo link") or was asked to ("send me
+    your resume"), "them" when the other person said they would ("send you
+    our demo"), "" when the wording doesn't say.
+
+    "me" is looked for first: a line that kept the other person's own words,
+    "send me your resume", has "your" in it and is still the wearer's to do."""
     words = set(re.findall(r"[a-z']+", text.lower()))
+    if "me" in words or words & {"them", "their", "him", "her", "his"}:
+        return "you"
     if words & {"you", "your", "yours"}:
         return "them"
-    # "send them the link", or their own words kept: "send me the deck"
-    if words & {"them", "their", "him", "her", "his", "me", "my"}:
-        return "you"
-    return ""
+    # "send my deck": theirs if they said it, but nothing says who did
+    return "you" if "my" in words else ""
 
 
 def follow_ups(people: list[Known]) -> str:

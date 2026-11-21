@@ -39,18 +39,19 @@ The glasses are optional. With none connected, the whole flow runs on the iPhone
 Implemented in `MeetEngine` in `Sources/MeetView.swift`. One tap runs the following.
 
 1. **Photo starts in the background.** `GlassesManager.capturePhoto()` returns a frame, which is encoded as JPEG at 0.7 quality.
-2. **Early recognition.** As soon as the frame arrives it is posted to `/api/recognize`. If the backend reports a match, the app immediately fetches that person's lookup card (`/api/lookup`), shows it on the lens, speaks the first line, and adds a card in the app. This happens once per person per app launch.
+2. **Early recognition.** As soon as the frame arrives it is posted to `/api/recognize`. If the backend reports a match, the app immediately fetches that person's lookup card (`/api/lookup`), shows it on the lens, speaks the first line, and adds a card in the app. This happens once per person per app launch. The engine remembers that it did so for the pass in flight (`earlyResult`).
 3. **Listening runs at the same time.** The microphone turn opens straight away and does not wait for the photo. By default it ends when you press Meet (shown as Done) or the glasses' capture button again (see [How a turn ends](#how-a-turn-ends)).
 4. **Decide who it is.** After the turn ends, the app takes one of three branches.
 
 **Branch A: the face matched a known person.**
 - The transcript is posted to `/api/ingest` with `speaker` set to the matched name, so the conversation attaches to that person instead of creating a duplicate.
 - If the backend reports a job title the app did not already have, the app re-posts the frame to `/api/enroll` with the role and org. (The backend already stores a title itself when the person had none, so this second call is a safeguard.)
-- The app fetches the lookup card, then shows it on the lens, speaks it, and adds a result card. Follow-ups are appended to the lens card as "You owe them: …".
+- The app fetches the lookup card, then shows it on the lens, speaks it, and adds a result card. Follow-ups are appended to the lens card as "You owe them: …" or "They owe you: …", read from their wording the same way the backend reads it.
+- If early recognition already announced this person during this pass, none of that is repeated: the result card it added is replaced, in place, by the finished one (transcript, topics, follow-ups), and nothing is spoken or sent to the lens a second time. The follow-ups are then in the app only, not on the lens.
 
 **Branch A2: the face matched an auto-named placeholder ("New contact 03").**
 - The transcript is ingested without a `speaker` first, to give the backend a chance to extract a real name.
-- If a real name comes back, the app re-enrolls the same frame under the real name, calls `/api/forget` on the placeholder, and moves the cached photo to the new name. The result is announced as "New contact 03 is really Dana".
+- If a real name comes back, the app re-enrolls the same frame under the real name, calls `/api/forget` on the placeholder, and moves the cached photo to the new name. The result is announced as "New contact 03 is really Dana". That is spoken and shown on the lens even when early recognition announced the placeholder, because the name is new; the early result card is still replaced, not added to.
 - If no name comes back, the transcript is ingested a second time pinned to the placeholder.
 
 **Branch B: no match (a new face).**
@@ -181,11 +182,12 @@ Screens follow the Apple app they resemble: Meet the way Camera sets controls ar
 | **Meet** | The one-tap loop above. The Meet button floats at the bottom in glass and, while the app is listening, becomes Done, which ends the turn. On its left, Speak turns the spoken card on or off; on its right, Keep Going repeats Meet until it is turned off. Above them: the live transcript, a level meter and the elapsed time while listening, then the latest result set like a contact (photo, name, role and company, what to say next, what is owed, what was heard), and earlier results as a list that opens each one. With nothing to show, the page says how to start, or that the microphone or camera is off, with Open Settings. The More menu holds Photo Only, Listen Only, Stop After Quiet (1.5 to 3 seconds) and Clear Results. |
 | **Meet → Photo Only** | A sheet. Recognises the face in one photo and shows a lookup card, or auto-enrolls on a miss using whatever transcript is currently held from Listen Only. |
 | **Meet → Listen Only** | A sheet. Press and hold to transcribe, release to stop, then tap Save to post the transcript to `/api/ingest`. A keyboard button lets you type or paste text instead. Shows a receipt of what the backend extracted (person, org, topics, follow-ups). |
-| **Map** | The backend's network map (the page it serves at `/`), full screen: everyone you have met, joined by what you talked about. Tapping someone opens their card above the ask field; **Ask about the people you've met** at the bottom posts the question to `/api/query`, where Nemotron answers it as an agent (looking people up, their connections and promises over a few steps), and shows the answer, the people it is about and what it looked at, with those people and the links between them lit on the map. |
+| **Map** | The backend's network map (the page it serves at `/`), full screen: everyone you have met, joined by what you talked about. Tapping someone opens their card above the ask field; **Ask about the people you've met** at the bottom posts the question to `/api/query`, where Nemotron answers it as an agent (looking people up, their connections and promises over a few steps), and shows the answer, the people it is about and what it looked at, with those people and the links between them lit on the map. Three questions to try sit under the field while it is empty ("Who's hiring ML interns?", "Who do I owe a follow-up?", "Who should I introduce?"); a tap fills the field and sends it. A person's card has **Draft follow-up**, which shows the message Nemotron writes (`/api/followup`) with Copy and Write again. |
 | **People** | Everyone in the graph (`/api/roster`, with duplicate names merged on the phone), A to Z with a section index, with a search field that filters by name, role or company, and anyone named automatically in a Needs a Name section at the top. Swipe a row to forget the person; touch and hold to rename or forget. The + button enrolls a person by hand with a name, role, company and a required photo. When it is empty it offers Add Person and Add Sample People. |
-| **People → person** | Their photo or initials, name, and role and company at the top, with Rename and Share in glass under them, then the backend's markdown card (`/api/person_card`) turned into list sections by a small built-in renderer, with History dates shown as dates. Forget This Person is at the bottom. |
+| **People → person** | Their photo or initials, name, and role and company at the top, with Rename, Share and Follow-Up in glass under them, then the backend's markdown card (`/api/person_card`) turned into list sections by a small built-in renderer, with History dates shown as dates. Follow-ups are listed under You Owe Them or They Owe You, by who promised them. Forget This Person is at the bottom. |
+| **People → person → Follow-Up** | A sheet titled Draft Follow-Up (`FollowUpSheet`). It posts the name to `/api/followup` and shows "Nemotron is writing…" until the message arrives, then the message with Copy, Share and Write Again, or the error text with Try Again. Thread drafts the message and never sends it. The action is left out for a person with no name yet. |
 | **Glasses** | The glasses at the top with Connect or Disconnect. Then, in a debug run with simulated glasses, the Simulated Glasses section described under [Running with simulated glasses](#running-with-simulated-glasses); the display, with a test card on glasses that have one; Buttons Start Meet and the experimental Listen Through Glasses; Always Use iPhone Camera; the microphone, speech recognition and camera permissions; Backend (the address, the password, kept in the Keychain, and a connection test); Diagnostics (Reconnect Glasses, the raw glasses, microphone and audio status, and the glasses' log); How Thread Works; and Show Welcome. |
-| **Glasses → How Thread Works** | What the app does, in plain words, plus **Add Sample People** (`/api/seed`) and **Delete Everything** (`/api/reset`, which empties the whole backend after a confirmation). |
+| **Glasses → How Thread Works** | What the app does, in plain words, for career fairs and conferences, plus **Add Sample People** (`/api/seed`: five made-up recruiters and engineers from a career fair, each with a conversation, topics and a follow-up) and **Delete Everything** (`/api/reset`, which empties the whole backend after a confirmation). |
 
 The first launch shows a welcome sheet. iOS asks for speech recognition and the microphone only after it is closed. Show Welcome in Glasses shows it again.
 
@@ -210,11 +212,12 @@ Every call is a JSON `POST` to `<base URL><path>` with no authentication header.
 | `/api/query` | `question` | `matches` (`name`, `org`, `last`), `reason`, `searched` | Search |
 | `/api/roster` | nothing | `people` (`name`, `role`, `org`, `relationship`, `enrolled_face`, `encounters`) | People, Search, Glasses → Backend test |
 | `/api/person_card` | `name` | `name`, `md` | Person page |
+| `/api/followup` | `name` | `name`, `message` | Person page → Follow-Up |
 | `/api/forget` | `name` | nothing | People, person page, rename, placeholder merge |
 | `/api/seed`, `/api/reset` | nothing | nothing | How Thread Works, and People when it is empty (seed only) |
 | `/api/timeline` | nothing | `events` | defined, never called |
 
-Timeouts are 60 s by default, 90 s for Recognize, lookup and person_card, and 120 s for ingest, query, Enroll, Seed and Reset.
+Timeouts are 60 s by default, 90 s for Recognize, lookup and person_card, and 120 s for ingest, query, followup, Enroll, Seed and Reset.
 
 The base URL is editable in Glasses → Backend and stored in `UserDefaults` under `backendBaseURL`. The default, `http://localhost:8000`, reaches a backend on the same machine only from the iOS Simulator; on an iPhone you enter the address the server prints when it starts.
 
@@ -239,7 +242,7 @@ Session result cards and transcripts are held in memory only and are lost when t
 - **From the glasses to the phone:** photos, and with "Also listen through the glasses" on, microphone audio for as long as the camera stream is open.
 - Raw audio is never sent to the backend.
 - **Kept on the phone:** with Include the Moment Before on (Glasses › Listening, off by default), the last 5 or 10 s of the phone's microphone are held in memory between turns, overwritten as they pass, and only transcribed when a Meet starts. A Meet that is not asked for them discards them. They are never written to disk. In a debug build, the glasses' audio from the last turn is kept as `Documents/glasses-last.wav` to diagnose glasses transcription; a release build deletes it straight after the second pass.
-- **From the backend to the language model (NVIDIA Nemotron):** transcript text and the stored details of the person being written about, whenever the backend needs language written. With your own vLLM server this stays on that machine; with NVIDIA's hosted API it goes to NVIDIA. Photos and face signatures are not sent. See `thread-backend/PRIVACY.md`.
+- **From the backend to the language model (NVIDIA Nemotron):** transcript text and the stored details of the person being written about, whenever the backend needs language written, which includes the last conversation with a person when a follow-up to them is drafted. With your own vLLM server this stays on that machine; with NVIDIA's hosted API it goes to NVIDIA. Photos and face signatures are not sent. See `thread-backend/PRIVACY.md`.
 
 Things worth knowing before pointing this at real data:
 
@@ -257,7 +260,6 @@ Not everything the app shows reaches the lens. The live transcript appears only 
 
 These are things the code does that a reader would probably not expect.
 
-- **A known face is announced twice the first time it is seen after launch.** The early-recognition path shows the lens card and speaks; after the turn ends, the match branch shows and speaks again, and adds a second result. The Meet screen then shows the later one as "Latest" and the early one under "Earlier".
 - **A new face costs two Recognize calls.** The early call discards a non-match, so the frame is posted again after the turn.
 - **"next" on a new-face lens card pages through the previous person's talking points.** The pager state is only set by the lookup card, so it still holds the last looked-up person's lines and name.
 - **A placeholder match with no name extracted ingests the transcript twice**, once unpinned and once pinned to the placeholder.
@@ -275,18 +277,18 @@ Unused code: `BackendAPI.timeline`, `DictationManager.record(seconds:)`, `Dictat
 | File | Lines | Contents |
 | --- | --- | --- |
 | `Sources/ThreadApp.swift` | 145 | App entry point, launch sequence, the tabs, the welcome sheet, the bar for a running Meet |
-| `Sources/MeetView.swift` | 1,336 | `MeetEngine` (the loop and its branches) and the Meet screen, its results and its bar for other tabs |
+| `Sources/MeetView.swift` | 1,404 | `MeetEngine` (the loop and its branches) and the Meet screen, its results and its bar for other tabs |
 | `Sources/DictationManager.swift` | 758 | Speech-to-text, turn-end detection, transcript bookkeeping |
 | `Sources/GlassesManager.swift` | 833 | Meta SDK registration, session and its pauses (tap to start), camera stream with optional audio, photo capture with phone fallback |
 | `Sources/GlassesEar.swift` | 171 | Transcribes audio from the glasses' microphones during a Meet turn |
 | `Sources/LensCards.swift` | 331 | `LensCards`: every card sent to the glasses display |
-| `Sources/BackendAPI.swift` | 485 | Backend client and response models |
-| `Sources/PeopleView.swift` | 674 | People list, person page, rename, manual enroll |
+| `Sources/BackendAPI.swift` | 580 | Backend client and response models |
+| `Sources/PeopleView.swift` | 788 | People list, person page, the follow-up draft, rename, manual enroll |
 | `Sources/MapView.swift` | 173 | Map: the backend's network page in a web view |
 | `Sources/CaptureView.swift` | 273 | Photo Only: single-shot capture and auto-enroll |
 | `Sources/ListenView.swift` | 229 | Listen Only: press-and-hold transcription and ingest |
 | `Sources/GlassesView.swift` | 384 | The glasses, settings and permissions, Backend and Diagnostics |
-| `Sources/GuideView.swift` | 197 | The welcome sheet, How Thread Works, sample people and Delete Everything |
+| `Sources/GuideView.swift` | 199 | The welcome sheet, How Thread Works, sample people and Delete Everything |
 | `Sources/AudioSessionController.swift` | 176 | The single shared audio session and route handling |
 | `Sources/FaceCache.swift` | 133 | On-phone photo cache and placeholder-name rules |
 | `Sources/PhoneCameraFallback.swift` | 89 | iPhone rear-camera capture |

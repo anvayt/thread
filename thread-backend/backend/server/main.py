@@ -6,8 +6,9 @@ with a matching HTTP status.
 """
 
 import logging
+import re
 import time
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -338,49 +339,142 @@ def compact_photos():
 
 # ---------------------------------------------------------------- demo data
 
+@dataclass
+class Sample:
+    """One demo person with what a real meeting would have left behind:
+    the topics discussed and the conversation itself."""
+
+    person: Person
+    topics: list[str]
+    # What was said, and how many hours ago.
+    heard: str
+    hours_ago: float
+
+
+# A student's afternoon at a career fair. The names and companies are made up.
+# Follow-ups are worded the way `ingest` files them, so who owes what reads
+# correctly (agent.owed_by): "them" is owed by the wearer, "you" by the person.
 SEED_PEOPLE = [
-    Person(
-        name="Sarah Chen", role="VP Product", org="Acme",
-        relationship="met at the Series A demo day",
-        last_interaction="talked through their Series B raise",
-        notes="still has an open question about our pricing tiers",
-        closeness=0.9, recency=0.9,
+    Sample(
+        Person(
+            name="Renata Okoye", role="University Recruiter", org="Brightfern AI",
+            relationship="met at the career fair, Brightfern AI booth",
+            last_interaction="ML internships, recommendation systems",
+            notes="hiring ML interns for next summer; applications close in two weeks",
+            interests=["hiring ML interns", "recommendation systems"],
+            followups=["send them the resume and the capstone repo link"],
+            closeness=0.6, recency=0.9,
+        ),
+        topics=["ML internships", "recommendation systems"],
+        heard="Hi, I'm Renata Okoye, I'm a university recruiter at Brightfern AI. We're "
+        "hiring ML interns for next summer, mostly on the recommendation systems team. "
+        "Applications close in two weeks. Send me your resume and the link to that "
+        "capstone repo and I'll make sure the team sees it.",
+        hours_ago=3.0,
     ),
-    Person(
-        name="Marcus Webb", role="Engineering Lead", org="Northwind",
-        relationship="former colleague",
-        last_interaction="promised to send the migration write-up",
-        notes="allergic to shellfish; do not suggest the oyster bar",
-        closeness=0.6, recency=0.4,
+    Sample(
+        Person(
+            name="Tobias Hale", role="Robotics Software Engineer", org="Wrenfield Robotics",
+            relationship="met at the career fair, Wrenfield Robotics demo table",
+            last_interaction="robotics, motion planning",
+            notes="works on motion planning for warehouse arms; liked the robot arm project",
+            interests=["robotics", "motion planning"],
+            followups=["send you the link to the perception team's open roles"],
+            closeness=0.5, recency=0.8,
+        ),
+        topics=["robotics", "motion planning"],
+        heard="I'm Tobias Hale, I write robotics software at Wrenfield Robotics, mostly "
+        "motion planning for our warehouse arms. Your robot arm project sounds close to "
+        "what the perception team does. I'll send you the link to their open roles.",
+        hours_ago=2.5,
     ),
-    Person(
-        name="Priya Raman", role="Partner", org="Fieldstone Capital",
-        relationship="introduced by Sarah",
-        last_interaction="brief hallway chat about the seed round",
-        notes="asked to be pinged once the metrics deck is ready",
-        closeness=0.3, recency=0.2,
+    Sample(
+        Person(
+            name="Devika Rao", role="Machine Learning Engineer", org="Lanternwave",
+            relationship="met at the career fair, after the Lanternwave tech talk",
+            last_interaction="ML internships, model evaluation",
+            notes="the team takes two ML interns each summer; cares about evaluation",
+            interests=["hiring ML interns", "model evaluation"],
+            followups=["email them the model evaluation write-up"],
+            closeness=0.5, recency=0.7,
+        ),
+        topics=["ML internships", "model evaluation"],
+        heard="Devika Rao, machine learning engineer at Lanternwave. My team takes two ML "
+        "interns each summer and we care a lot about model evaluation. Email me that "
+        "evaluation write-up you mentioned, I'd like to read it.",
+        hours_ago=2.0,
+    ),
+    Sample(
+        Person(
+            name="Jonah Bergstrom", role="Engineering Manager", org="Wrenfield Robotics",
+            relationship="met at the career fair, introduced by Tobias",
+            last_interaction="robotics, embedded systems",
+            notes="hiring new-grad embedded engineers; wants to meet the robotics club",
+            interests=["robotics", "embedded systems"],
+            followups=["introduce them to the robotics club lead"],
+            closeness=0.4, recency=0.6,
+        ),
+        topics=["robotics", "embedded systems"],
+        heard="Jonah Bergstrom, I manage the embedded team at Wrenfield Robotics. We're "
+        "hiring new-grad embedded engineers this year. I'd love to meet whoever leads "
+        "your robotics club, can you introduce me?",
+        hours_ago=1.5,
+    ),
+    Sample(
+        Person(
+            name="Priscilla Tan", role="Campus Recruiter", org="Stackmere Cloud",
+            relationship="met at the career fair, Stackmere Cloud booth",
+            last_interaction="backend internships, distributed systems",
+            notes="hiring backend and infrastructure interns; first step is an online assessment",
+            interests=["hiring backend interns", "distributed systems"],
+            followups=["send you the online assessment by Friday"],
+            closeness=0.3, recency=0.5,
+        ),
+        topics=["backend internships", "distributed systems"],
+        heard="I'm Priscilla Tan, campus recruiter at Stackmere Cloud. We're hiring backend "
+        "and infrastructure interns, lots of distributed systems work. The first step is "
+        "an online assessment, I'll send you that by Friday.",
+        hours_ago=1.0,
     ),
 ]  # fmt: skip
 
-SEED_THINGS = [
-    Thing(name="keys", category="everyday carry",
-          context="usually left on the kitchen counter", closeness=0.8, recency=0.9),
-    Thing(name="blue inhaler", category="medication",
-          context="two puffs, morning and night", closeness=0.7, recency=0.5),
-]  # fmt: skip
+# No sample things: a career-fair demo is about people. The feature and its
+# storage stay.
+SEED_THINGS: list[Thing] = []
 
 
 @app.post("/api/seed")
 def seed():
-    """Add the demo people and things. Safe to press twice: anything already
-    present by name is left alone. Faces are enrolled separately."""
+    """Add the demo people, each with the conversation they were met in and
+    its topics. Safe to press twice: anyone already present by name is left
+    alone. Faces are enrolled separately."""
     added = []
+    now = time.time()
     with session() as db:
         known = {p.name.lower() for p in db.people()}
         for spec in SEED_PEOPLE:
-            if spec.name.lower() not in known:
-                db.add_person(replace(spec))
-                added.append(spec.name)
+            if spec.person.name.lower() in known:
+                continue
+            who = db.add_person(
+                replace(
+                    spec.person,
+                    interests=list(spec.person.interests),
+                    followups=list(spec.person.followups),
+                )
+            )
+            when = time.strftime(
+                "%Y-%m-%d %H:%M:%S", time.localtime(now - spec.hours_ago * 3600)
+            )
+            db.add_interaction(
+                who.id,
+                Interaction(
+                    timestamp=when, kind="conversation",
+                    summary=", ".join(spec.topics), transcript=spec.heard,
+                ),
+            )  # fmt: skip
+            for label in spec.topics:
+                db.add_topic(who.id, label)
+            added.append(who.name)
 
         held = {t.name.lower() for t in db.things()}
         for spec in SEED_THINGS:
@@ -620,14 +714,75 @@ def person_card(body: PersonCardIn):
         topics = [t.label for t in db.topics(who.id)]
         if topics:
             md += "\n## Discussed\n" + ", ".join(topics) + "\n"
-        if who.followups:
+        # A follow-up whose wording doesn't say who promised it stays with
+        # the wearer's, where every follow-up used to be listed.
+        theirs = [f for f in who.followups if agent.owed_by(f) == "them"]
+        mine = [f for f in who.followups if f not in theirs]
+        if mine:
             md += "\n## You owe them\n"
-            md += "".join(f"- {f}\n" for f in who.followups)
+            md += "".join(f"- {f}\n" for f in mine)
+        if theirs:
+            md += "\n## They owe you\n"
+            md += "".join(f"- {f}\n" for f in theirs)
         if past:
             md += "\n## History\n"
             md += "".join(f"- `{e.timestamp}` {e.summary}\n" for e in past)
 
         return ok({"name": who.name, "photo_b64": who.photo_b64, "md": md})
+
+
+class FollowupIn(BaseModel):
+    name: str
+    # Who is writing, to sign the message with. Left out, it is unsigned.
+    wearer: str = ""
+
+
+def _plain_message(text: str) -> str:
+    """The draft as plain text: no subject line, no Markdown marks, and no
+    line that is only a placeholder such as "[Your Name]"."""
+    kept = []
+    for line in text.replace("\r", "").split("\n"):
+        bare = line.strip()
+        if bare.lower().startswith("subject:") or re.fullmatch(r"\[[^\]]*\]", bare):
+            continue
+        kept.append(re.sub(r"\*\*|__|^#+\s*", "", bare))
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip().strip('"').strip()
+
+
+@app.post("/api/followup")
+def followup(body: FollowupIn):
+    """Draft the follow-up message to one person, the kind sent on LinkedIn
+    after a career fair.
+
+    Nemotron writes it from the record and nothing else: role, company,
+    topics, who owes what, and the last conversation. The wording of each
+    follow-up says who owes it (agent.owed_by), and the model is told which
+    is which so a promise never changes hands. Nothing is saved."""
+    with session() as db:
+        people = db.people()
+        who = find_by_name(people, body.name) or (
+            _find_by_fragment(people, body.name) if body.name.strip() else None
+        )
+        if who is None:
+            raise HTTPException(404, f"Nobody called '{body.name.strip()}' is on record.")
+        topics = [t.label for t in db.topics(who.id)]
+        talks = [e for e in db.interactions(who.id) if e.kind == "conversation"]
+
+    owed = {"you": [], "them": [], "": []}
+    for f in who.followups:
+        owed[agent.owed_by(f)].append(f)
+    last = talks[-1] if talks else None
+    draft = llm.draft_followup(
+        who.name, who.role, who.org, ", ".join(topics),
+        "\n".join(owed["you"]), "\n".join(owed["them"]), "\n".join(owed[""]),
+        (last.summary if last else "") or who.last_interaction,
+        " ".join(last.transcript.split())[:1500] if last else "",
+        body.wearer.strip(),
+    )  # fmt: skip
+    message = _plain_message(draft.message)
+    if not message:
+        raise llm.LLMError("The language model gave an empty message.")
+    return ok({"name": who.name, "message": message})
 
 
 class QueryIn(BaseModel):

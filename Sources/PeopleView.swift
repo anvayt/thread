@@ -279,6 +279,7 @@ struct ContactView: View {
     @State private var confirmForget = false
     @State private var forgetting = false
     @State private var renaming = false
+    @State private var drafting = false
     @State private var showsTitle = false
 
     /// A rename is only possible when we still hold the frame this person was
@@ -350,6 +351,14 @@ struct ContactView: View {
                             .buttonStyle(.plain)
                             .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
                             .disabled(card == nil)
+                            // Someone with no name yet has nobody to write to.
+                            if !isPlaceholder {
+                                HeaderAction(title: "Follow-Up", systemImage: "square.and.pencil") {
+                                    drafting = true
+                                }
+                                .accessibilityLabel("Draft Follow-Up")
+                                .disabled(card == nil)
+                            }
                         }
                     }
                 }
@@ -427,6 +436,9 @@ struct ContactView: View {
                 }
             )
         }
+        .sheet(isPresented: $drafting) {
+            FollowUpSheet(name: name)
+        }
         .task {
             do {
                 card = try await BackendAPI.personCard(name: name)
@@ -447,6 +459,93 @@ struct ContactView: View {
             dismiss()
         } catch {
             errorText = "Couldn't forget them. \(error.localizedDescription)"
+        }
+    }
+}
+
+// MARK: - Draft follow-up
+
+/// The follow-up message to one person, written by the backend's language
+/// model (Nemotron) from what is on record about them. Thread drafts it and
+/// never sends it: Copy and Share hand it to whichever app does.
+struct FollowUpSheet: View {
+    let name: String
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var message: String?
+    @State private var errorText: String?
+    @State private var copied = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let message {
+                    Section {
+                        Text(message)
+                            .textSelection(.enabled)
+                    } header: {
+                        Text("To \(name)")
+                    } footer: {
+                        Text("Written by Nemotron from what Thread has on record. Read it before you send it.")
+                    }
+
+                    Section {
+                        Button {
+                            UIPasteboard.general.string = message
+                            copied = true
+                        } label: {
+                            Label(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
+                        }
+                        ShareLink(item: message) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                        Button {
+                            Task { await write() }
+                        } label: {
+                            Label("Write Again", systemImage: "arrow.clockwise")
+                        }
+                    }
+                } else if let errorText {
+                    Section {
+                        ProblemLabel(errorText)
+                        Button("Try Again") { Task { await write() } }
+                    }
+                } else {
+                    Section {
+                        HStack(spacing: 12) {
+                            ProgressView()
+                            Text("Nemotron is writing…")
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+            }
+            .navigationTitle("Draft Follow-Up")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .task { await write() }
+    }
+
+    private func write() async {
+        message = nil
+        errorText = nil
+        copied = false
+        do {
+            let draft = try await BackendAPI.followup(name: name)
+            if draft.isEmpty {
+                errorText = "The backend sent back an empty message."
+            } else {
+                message = draft
+            }
+        } catch {
+            errorText = "Couldn't write the message. \(error.localizedDescription)"
         }
     }
 }

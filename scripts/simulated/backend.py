@@ -1,9 +1,9 @@
 """The real backend with a scripted stand-in for the language model.
 
 For running the app end to end in the Simulator with no language model.
-Everything but the five language tasks is the real server: face matching,
-storage, the API and the dashboard. The five tasks answer from the fixed rules below, so
-names, cards and answers are crude and repeatable.
+Everything but the six language tasks is the real server: face matching,
+storage, the API and the dashboard. The six tasks answer from the fixed rules below, so
+names, cards, answers and follow-up drafts are crude and repeatable.
 
 `scripts/simulate.sh` starts this when it finds no language model. By hand:
 
@@ -61,12 +61,29 @@ def caption_line(heard: str, lang: str) -> llm.Caption:
     return llm.Caption(language=lang, text=heard.strip().capitalize() + ".")
 
 
+def draft_followup(name, role, org, topics, you_owe, they_owe, other, last, heard, wearer="") -> llm.FollowUp:
+    first = name.split()[0] if name.split() else "there"
+    parts = [f"Hi {first}, it was good to meet you" + (f" and hear about {org}." if org else ".")]
+    if topics:
+        parts.append(f"I enjoyed talking about {topics}.")
+    for line in you_owe.splitlines():
+        parts.append(f"As promised, I will {line.replace('them', 'you')}.")
+    for line in they_owe.splitlines():
+        parts.append(f"Thanks for offering to {line.replace('you', 'me')}.")
+    for line in other.splitlines():
+        parts.append(f"Following up on: {line}.")
+    parts.append("Thanks again" + (f",\n{wearer}" if wearer else "."))
+    return llm.FollowUp(message=" ".join(parts))
+
+
 def agent_turn(messages, tools, finish_with=""):
     # No agent here: Ask falls back to pick_matches above.
     raise llm.LLMError("the stand-in answers in one step")
 
 
-for task in (extract_contact, compose, lookup_card, pick_matches, caption_line, agent_turn):
+for task in (
+    extract_contact, compose, lookup_card, pick_matches, caption_line, draft_followup, agent_turn
+):
     setattr(llm, task.__name__, task)
 
 if __name__ == "__main__":

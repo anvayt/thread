@@ -29,7 +29,7 @@ struct WelcomeView: View {
                         FeatureRow(
                             systemImage: "person.wave.2",
                             title: "Meet Someone",
-                            text: "Press Meet, or the capture button on your glasses, and let them introduce themselves. Thread takes one photo and listens until you press again."
+                            text: "At a career fair or a conference, press Meet, or the capture button on your glasses, and let them introduce themselves. Thread takes one photo and listens until you press again."
                         )
                         FeatureRow(
                             systemImage: "person.text.rectangle",
@@ -38,8 +38,8 @@ struct WelcomeView: View {
                         )
                         FeatureRow(
                             systemImage: "magnifyingglass",
-                            title: "Ask Your Network",
-                            text: "Search in plain words, like who you met working on payments."
+                            title: "Ask and Follow Up",
+                            text: "Ask in plain words, like who's hiring ML interns or who you owe a follow-up. Then have the follow-up message drafted for you."
                         )
                         FeatureRow(
                             systemImage: "lock",
@@ -87,22 +87,23 @@ struct GuideView: View {
     var body: some View {
         List {
             Section {
-                step(1, "Tap Meet. Thread starts listening straight away and takes one photo at the same time.")
+                step(1, "At a recruiter's booth or after a talk, tap Meet. Thread starts listening straight away and takes one photo at the same time.")
                 step(2, "It listens until you press Meet or the capture button again, so a long introduction is never cut short. It stops by itself after \(Int(TurnTiming.pressCeiling / 60)) minutes. To have it stop when they go quiet instead, choose Stop Listening in Meet's More menu.")
                 step(3, "The photo is compared with every face in your network. If it matches, you get their card: who they are and what to say next.")
                 step(4, "If it doesn't match, the same photo is added on the spot, under the name they said, or as “New contact” with a number until you name them.")
-                step(5, "What they said is filed under that person: their company, what you talked about, and anything you promised.")
+                step(5, "What they said is filed under that person: their company, what you talked about, and anything either of you promised.")
             } header: {
                 Text("How Meet Works")
             } footer: {
-                Text("The card is shown in the app and spoken. Glasses with a display show it on the lens as well.")
+                Text("Thread is made for career fairs and conferences, where you meet a dozen people in an hour. The card is shown in the app and spoken. Glasses with a display show it on the lens as well.")
             }
 
             Section("Other Ways In") {
                 FeatureRow(systemImage: "repeat", title: "Keep Going", text: "The button to the right of Meet repeats Meet until you turn it off.")
                 FeatureRow(systemImage: "button.programmable", title: "The Glasses' Buttons", text: "Press the capture button or double-tap the temple to start Meet, and press again to stop listening. You can switch this off in Glasses.")
                 FeatureRow(systemImage: "ellipsis.circle", title: "Photo Only and Listen Only", text: "In Meet's More menu: one photo on its own, or a transcript while you hold the button.")
-                FeatureRow(systemImage: "magnifyingglass", title: "Search", text: "Ask about the people you've met in plain words.")
+                FeatureRow(systemImage: "magnifyingglass", title: "Ask", text: "In Map, ask about the people you've met in plain words: who's hiring ML interns, who you owe a follow-up, who you should introduce.")
+                FeatureRow(systemImage: "square.and.pencil", title: "Draft Follow-Up", text: "On a person's page, Follow-Up writes a short message to them from what was said, ready to copy or share. Thread never sends it for you.")
             }
 
             Section("On the Lens") {
@@ -118,7 +119,7 @@ struct GuideView: View {
             Section("Privacy") {
                 Text("Faces are matched on your own backend. No photo goes to an outside face service.")
                 Text("A photo that is only being recognised is used once and dropped. The photo you add someone from is kept, on this phone and on your backend.")
-                Text("Audio is never sent to your backend, only the transcribed text. The backend keeps that text and sends it to a language model to pull out names, companies and follow-ups.")
+                Text("Audio is never sent to your backend, only the transcribed text. The backend keeps that text and sends it to a language model to pull out names, companies and follow-ups, and to draft a follow-up message when you ask for one.")
                 Text("Nothing is transcribed until you start a capture. The microphone is kept ready while the app is open, so the first words aren't lost.")
                 Text("With Include the Moment Before on, the last 5 or 10 seconds are kept in the iPhone's memory, overwritten as they pass, and transcribed only when you start Meet.")
                 Text("Forget removes a person's face, their notes and every meeting.")
@@ -150,7 +151,7 @@ struct GuideView: View {
         } header: {
             Text("Try It")
         } footer: {
-            Text("Add the sample people, then Meet someone new twice: the second time, Thread should know them. Delete Everything empties the backend this phone is connected to.")
+            Text("The sample people are five recruiters and engineers from a career fair, with made-up names and companies. Add them, then Meet someone new twice: the second time, Thread should know them. Delete Everything empties the backend this phone is connected to.")
         }
         .confirmationDialog(
             "Delete everything?",

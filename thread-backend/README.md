@@ -79,7 +79,7 @@ Set these in `backend/.env` or in the shell.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `LLM_BASE_URL` | `http://127.0.0.1:8001/v1` | The OpenAI-compatible API that writes whispers, lookup cards, conversation filing, questions and long captions: a vLLM server, or `https://integrate.api.nvidia.com/v1` for NVIDIA's hosted API. |
+| `LLM_BASE_URL` | `http://127.0.0.1:8001/v1` | The OpenAI-compatible API that writes whispers, lookup cards, conversation filing, questions, follow-up drafts and long captions: a vLLM server, or `https://integrate.api.nvidia.com/v1` for NVIDIA's hosted API. |
 | `LLM_API_KEY` | none | The key for NVIDIA's hosted API. A vLLM server started without `--api-key` needs none. |
 | `LLM_MODEL` | `nvidia/nemotron-3.5-lightning-30b-a3b` | The model to ask for. With vLLM it must match `--served-model-name`. |
 | `HOST` | `0.0.0.0` | `127.0.0.1` keeps the server unreachable from other devices. |
@@ -91,7 +91,7 @@ Set these in `backend/.env` or in the shell.
 With the server running:
 
 ```bash
-./demo.sh reset                  # wipe, then add three demo people
+./demo.sh reset                  # wipe, then add the five sample people
 ./demo.sh hear "Hi, I'm Sarah Chen, I run product at Acme, we just closed our Series B."
 ./demo.sh who Sarah              # lookup card
 ./demo.sh ask "who did I meet in fintech?"
@@ -112,7 +112,20 @@ curl -s -X POST http://127.0.0.1:8000/api/ingest \
 curl -s -X POST http://127.0.0.1:8000/api/query \
      -H 'Content-Type: application/json' \
      -d '{"question":"who works on databases?"}'
+
+curl -s -X POST http://127.0.0.1:8000/api/followup \
+     -H 'Content-Type: application/json' \
+     -d '{"name":"Renata Okoye"}'
 ```
+
+The last one needs the sample people (`./demo.sh reset`, or `POST /api/seed`).
+They are five people a student might meet at a career fair, with made-up names
+and companies: Renata Okoye (recruiter, Brightfern AI), Tobias Hale and Jonah
+Bergstrom (Wrenfield Robotics), Devika Rao (ML engineer, Lanternwave) and
+Priscilla Tan (recruiter, Stackmere Cloud). Each comes with one conversation,
+its topics and a follow-up, some owed by you and some by them, so the map has
+links and Ask has answers to "Who's hiring ML interns?", "Who do I owe a
+follow-up?" and "Who should I talk to about robotics?". No things are added.
 
 Interactive API documentation is at `/api/docs`.
 
@@ -170,7 +183,7 @@ captions, pulling structure out of speech, and phrasing the reminder.
 | `server/main.py` | The HTTP endpoints (FastAPI). |
 | `server/store.py` | The database: people, interactions, topics, things (SQLite). |
 | `server/faces.py` | Face detection, signatures and photo thumbnails (OpenCV). |
-| `server/llm.py` | The five language tasks and the shape of each answer, and one agent step with tools (Nemotron, through an OpenAI-compatible API). |
+| `server/llm.py` | The six language tasks and the shape of each answer, and one agent step with tools (Nemotron, through an OpenAI-compatible API). |
 | `server/agent.py` | Ask: Nemotron as an agent with read-only tools over the people you have met. |
 | `server/logic.py` | Name matching, similarity, and the lookup-card cache. |
 | `server/__main__.py` | Start-up: reads `.env`, prints addresses, runs the server. |
@@ -203,6 +216,17 @@ map lights up the people and links. A model server without tool calling gets
 the question the simple way: the database builds the roster and the model only
 picks from it.
 
+`followup` is where the agent's reading ends in work done: Nemotron drafts
+the message to send one person after meeting them. It is given that person's
+record and nothing else (role, company, topics, the last conversation as it
+was heard), with their follow-ups already sorted by who promised them, which
+the server reads from the wording ("send you…" is theirs, "send them…" is
+yours), so a promise cannot change hands in the draft. It is told to add no
+fact that is not there and, with almost nothing on record, to write a plain
+"good to meet you" and stop. The reply is cleaned to plain text (no subject
+line, no Markdown, no "[Your Name]") before it is returned, and nothing is
+saved or sent.
+
 Lookup cards are cached per person and rebuilt only when something about that
 person changes, so reopening a card does not call the model again.
 
@@ -217,19 +241,20 @@ All are `POST /api/<name>` with a JSON body.
 | `ingest` | `transcript`, optional `speaker` | `saved`, `new_person`, `role`, `org`, `topics`, `new_topics`, `followups` |
 | `lookup` | `name` (or `"last"`) | `found`, `headline`, `lines`, `topics`, `followups`, `history`, `photo_b64` |
 | `person_card` | `name`, optional `refresh` | `name`, `md` (a markdown page), `photo_b64` |
+| `followup` | `name`, optionally `wearer` (your own name, to sign with) | `name`, `message` (plain text, under about 80 words); an unknown name is a 404 error |
 | `query` | `question`, optionally `wearer` (your own name) | `matches` (`name`, `org`, `last`), `reason` (the answer), `searched`; from the agent also `links` (`from`, `to`, `kind`: person or topic, `via`), `steps` (what it looked at) and `agent: true` |
 | `caption` | `text`, optional `lang` | `display_text` |
 | `roster` | nothing | `people`, `things` |
 | `graph`, `timeline` | nothing | the dashboard's views |
 | `forget` | `name` | `forgotten` |
-| `seed`, `reset` | nothing | demo data in, everything out |
+| `seed`, `reset` | nothing | the five sample people in, everything out |
 | `glance` | `image_b64` | `whisper` (`text`, `kind`, `confidence`), `matched` |
 | `compact_photos` | nothing | re-thumbnails stored photos |
 
 Images are base64-encoded JPEGs.
 
 A successful response is `{"ok": true, "data": {...}}`. A failure is
-`{"ok": false, "error": "..."}` with HTTP status 404 (no such endpoint), 405
+`{"ok": false, "error": "..."}` with HTTP status 404 (no such endpoint, or nobody by that name for `followup`), 405
 (not a `POST`), 422 (bad request), 503 (the language model is unavailable) or
 500.
 

@@ -42,6 +42,7 @@ class FakeLLM:
         self.card = llm.Card(headline="Someone you know", lines=["Ask how it went"])
         self.line = "Ask about the launch."
         self.caption_text = "A cleaned caption."
+        self.message = "Good to meet you today."
         # The agent's replies, one per step, in order. With none scripted it
         # behaves like a server that can't call tools, so Ask falls back to
         # pick_matches.
@@ -72,6 +73,10 @@ class FakeLLM:
         self.calls.append(("pick_matches", args))
         return self.matches
 
+    def draft_followup(self, *args):
+        self.calls.append(("draft_followup", args))
+        return llm.FollowUp(message=self.message)
+
     def agent_turn(self, messages, tools, finish_with=""):
         self.calls.append(("agent_turn", ()))
         self.agent_steps.append(
@@ -82,7 +87,10 @@ class FakeLLM:
         return self.turns.pop(0)
 
 
-TASKS = ("compose", "caption_line", "extract_contact", "lookup_card", "pick_matches", "agent_turn")
+TASKS = (
+    "compose", "caption_line", "extract_contact", "lookup_card", "pick_matches",
+    "draft_followup", "agent_turn",
+)  # fmt: skip
 REAL_TASKS = {task: getattr(llm, task) for task in TASKS}
 
 

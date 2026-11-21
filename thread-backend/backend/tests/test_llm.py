@@ -304,3 +304,19 @@ def test_a_server_that_cannot_call_tools_is_reported(server):
     server.will_refuse(400, '"auto" tool choice requires --enable-auto-tool-choice')
     with pytest.raises(llm.LLMError, match="enable-auto-tool-choice"):
         REAL_TASKS["agent_turn"]([{"role": "user", "content": "q"}], TOOLS)
+
+
+def test_the_follow_up_draft_is_told_to_stay_on_the_record(server):
+    server.will_answer('{"message": "Hi Renata, good to meet you."}')
+
+    draft = REAL_TASKS["draft_followup"](
+        "Renata Okoye", "University Recruiter", "Brightfern AI", "ML internships",
+        "send them the resume", "", "", "ML internships", "", "",
+    )  # fmt: skip
+
+    assert draft == llm.FollowUp(message="Hi Renata, good to meet you.")
+    system = server.message("system")
+    assert "never add a fact" in system
+    assert "Under 80 words" in system and "no placeholders" in system
+    assert "<you_owe>\nsend them the resume\n</you_owe>" in server.message("user")
+    assert server.requests[0]["response_format"]["json_schema"]["name"] == "FollowUp"

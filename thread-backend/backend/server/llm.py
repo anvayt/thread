@@ -107,6 +107,14 @@ class Matches(BaseModel):
     )
 
 
+class FollowUp(BaseModel):
+    message: str = Field(
+        description="The message itself, ready to paste and send: plain text, first "
+        "person, under 80 words. No subject line, no Markdown, and no placeholders "
+        "such as '[Your Name]'."
+    )
+
+
 # ---------------------------------------------------------------- transport
 
 _clients: dict = {}
@@ -374,6 +382,53 @@ def pick_matches(question: str, roster: str) -> Matches:
         ],
         temperature=0.0,
         max_tokens=400,
+    )
+
+
+def draft_followup(
+    name: str, role: str, org: str, topics: str,
+    you_owe: str, they_owe: str, other: str, last: str, heard: str, wearer: str = "",
+) -> FollowUp:  # fmt: skip
+    return _ask(
+        FollowUp,
+        "Write the short follow-up message the wearer sends this person after meeting "
+        "them at a career fair or conference, the kind sent on LinkedIn. Write as the "
+        "wearer, in the first person, to the person by their first name. Use only what "
+        "is given: never add a fact, a date, a link, a job or a promise that is not "
+        "there. Keep what the wearer promised and what the person promised the right "
+        "way round. If almost nothing is given, write a brief, plain note saying it "
+        "was good to meet them, and nothing more. Under 80 words, plain text, no "
+        "subject line, no Markdown, and no placeholders in brackets. Sign off with the "
+        "wearer's name only when one is given.",
+        [
+            ("name", "The person the message is to.", name),
+            ("role", "Their job title, may be empty.", role),
+            ("org", "The organisation they belong to, may be empty.", org),
+            ("topics", "What the two talked about, comma separated. May be empty.", topics),
+            (
+                "you_owe",
+                "What the wearer said they would do for this person, one per line. "
+                "May be empty.",
+                you_owe,
+            ),
+            (
+                "they_owe",
+                "What this person said they would do for the wearer, one per line. "
+                "May be empty.",
+                they_owe,
+            ),
+            (
+                "other",
+                "Follow-ups where the record doesn't say who promised them, one per "
+                "line. Mention them without saying who owes them. May be empty.",
+                other,
+            ),
+            ("last", "What the last conversation was about, in a few words. May be empty.", last),
+            ("heard", "The last conversation as it was heard. May be empty.", heard),
+            ("wearer", "The wearer's own name, to sign off with. May be empty.", wearer),
+        ],
+        temperature=0.3,
+        max_tokens=300,
     )
 
 

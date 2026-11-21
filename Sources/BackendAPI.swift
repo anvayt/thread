@@ -495,6 +495,13 @@ enum BackendAPI {
         )
     }
 
+    /// A short follow-up message to this person, written by the backend's
+    /// language model from what is on record about them. Nothing is saved.
+    static func followup(name: String) async throws -> String {
+        let payload = try await post("/api/followup", ["name": name], timeout: 120)
+        return str(payload["message"])
+    }
+
     static func timeline() async throws -> [TimelineEvent] {
         let payload = try await post("/api/timeline")
         let events = payload["events"] as? [[String: Any]] ?? []
@@ -570,4 +577,30 @@ enum BackendPassword {
                 UserDefaults.standard.integer(forKey: changesKey) + 1, forKey: changesKey)
         }
     }
+}
+
+/// Who owes a follow-up, read from its wording the way the backend reads it
+/// (`agent.owed_by`): "send you our demo" was said by the other person, so
+/// they owe it; anything else is the wearer's to do.
+enum FollowUp {
+    static func theyOwe(_ text: String) -> Bool {
+        let words = Set(
+            text.lowercased()
+                .split(whereSeparator: { !($0.isLetter || $0 == "'") })
+                .map(String.init)
+        )
+        // "Send me your resume" has "your" in it and is still the wearer's.
+        if words.contains("me") || !words.isDisjoint(with: ["them", "their", "him", "her", "his"]) {
+            return false
+        }
+        return !words.isDisjoint(with: ["you", "your", "yours"])
+    }
+
+    /// The follow-up with who owes it in front, for a line of a card.
+    static func line(_ text: String) -> String {
+        theyOwe(text) ? "They owe you: \(text)" : "You owe them: \(text)"
+    }
+
+    static func mine(_ all: [String]) -> [String] { all.filter { !theyOwe($0) } }
+    static func theirs(_ all: [String]) -> [String] { all.filter(theyOwe) }
 }

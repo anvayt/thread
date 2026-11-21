@@ -73,6 +73,10 @@ def test_being_asked_to_send_something_is_a_follow_up_you_owe():
     assert agent.owed_by("Send me anything in embedded payments") == "you"
     assert agent.owed_by("send you our demo video") == "them"
     assert agent.owed_by("send the metrics deck") == ""
+    # their own words kept: "your" is in it, and it is still the wearer's to do
+    assert agent.owed_by("Send me your resume tonight") == "you"
+    assert agent.owed_by("send them your resume") == "you"
+    assert agent.owed_by("send you my slides") == "them"
 
 
 def test_find_people_searches_topics_promises_and_meetings(net):

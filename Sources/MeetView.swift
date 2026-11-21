@@ -171,6 +171,10 @@ final class MeetEngine: ObservableObject {
     /// "reuse whatever Listen captured this session" fallback from attaching
     /// the previous person's words to the next face.
     private var shownEarly: Set<String> = []
+    /// The result early recognition added during the pass in flight, once it
+    /// has shown and spoken that person. The after-turn branch then updates
+    /// that result instead of announcing the same person a second time.
+    private var earlyResult: (name: String, id: UUID)?
     private var lastConsumedTranscript = ""
 
     private init() {}
@@ -230,6 +234,7 @@ final class MeetEngine: ObservableObject {
         errorText = nil
         frameSource = ""
         micSource = ""
+        earlyResult = nil
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
 
         // Anything the Listen pipeline already captured this session, in case
@@ -421,17 +426,16 @@ final class MeetEngine: ObservableObject {
         let headline = card?.headline ?? hit.name
 
         statusLine = "\(hit.name). You've met before."
-        results.insert(
-            MeetResult(
-                kind: .recognised,
-                name: hit.name,
-                role: hit.role,
-                org: hit.org,
-                headline: headline,
-                lines: lines
-            ),
-            at: 0
+        let shown = MeetResult(
+            kind: .recognised,
+            name: hit.name,
+            role: hit.role,
+            org: hit.org,
+            headline: headline,
+            lines: lines
         )
+        results.insert(shown, at: 0)
+        earlyResult = (hit.name, shown.id)
         await LensCards.shared.showLookup(
             headline: headline,
             subhead: [hit.role, hit.org].filter { !$0.isEmpty }
@@ -502,7 +506,7 @@ final class MeetEngine: ObservableObject {
         }
         let followups = card.followups.isEmpty ? (receipt?.followups ?? []) : card.followups
         if lines.isEmpty, let owed = followups.first {
-            lines = ["You owe them: \(owed)."]
+            lines = ["\(FollowUp.line(owed))."]
         }
         if lines.isEmpty { lines = ["You've met before. No notes yet."] }
 
@@ -511,26 +515,40 @@ final class MeetEngine: ObservableObject {
             ? "\(who.renamedFrom) is really \(who.name)"
             : (card.headline.isEmpty ? recognition.title : card.headline)
 
-        results.append(
-            MeetResult(
-                kind: renamed ? .renamed : .recognised,
-                name: who.name,
-                role: who.role,
-                org: who.org,
-                headline: headline,
-                lines: lines,
-                topics: card.topics.isEmpty ? (receipt?.topics ?? []) : card.topics,
-                followups: followups,
-                transcript: transcript,
-                placeholder: who.isPlaceholder,
-                renamedFrom: who.renamedFrom,
-                frameSource: frameSource,
-                micSource: micSource
-            )
+        let result = MeetResult(
+            kind: renamed ? .renamed : .recognised,
+            name: who.name,
+            role: who.role,
+            org: who.org,
+            headline: headline,
+            lines: lines,
+            topics: card.topics.isEmpty ? (receipt?.topics ?? []) : card.topics,
+            followups: followups,
+            transcript: transcript,
+            placeholder: who.isPlaceholder,
+            renamedFrom: who.renamedFrom,
+            frameSource: frameSource,
+            micSource: micSource
         )
+        // Early recognition may already have shown and spoken this person
+        // during this pass. Its result is then brought up to date with the
+        // transcript and follow-ups, in place, instead of adding a second one.
+        var announced = false
+        if let early = earlyResult, early.name == recognition.name,
+           let index = results.firstIndex(where: { $0.id == early.id }) {
+            results[index] = result
+            announced = true
+        } else {
+            results.append(result)
+        }
+        earlyResult = nil
         statusLine = renamed
             ? "Renamed \(who.renamedFrom) to \(who.name)."
             : "Matched in \(recognition.elapsedMs) ms"
+
+        // Already on the lens and spoken once. A new name for a placeholder
+        // is news, so that is still said.
+        if announced, !renamed { return }
 
         if renamed {
             speech?.speak("That's \(who.name). Renamed from \(who.renamedFrom).")
@@ -544,7 +562,7 @@ final class MeetEngine: ObservableObject {
         await LensCards.shared.showLookup(
             headline: who.name,
             subhead: who.subhead,
-            lines: lines + followups.map { "You owe them: \($0)" },
+            lines: lines + followups.map(FollowUp.line),
             name: who.name
         )
     }
@@ -717,7 +735,7 @@ final class MeetEngine: ObservableObject {
                 lines.append("Works at \(who.org).")
             }
             if let owed = receipt?.followups.first {
-                lines.append("You owe them: \(owed).")
+                lines.append("\(FollowUp.line(owed)).")
             }
             if lines.isEmpty {
                 lines.append(
@@ -1263,10 +1281,19 @@ struct MeetResultSections: View {
             }
         }
 
-        if !result.followups.isEmpty {
+        let mine = FollowUp.mine(result.followups)
+        if !mine.isEmpty {
             Section("You Owe Them") {
-                ForEach(Array(result.followups.enumerated()), id: \.offset) { _, item in
+                ForEach(Array(mine.enumerated()), id: \.offset) { _, item in
                     Label(item, systemImage: "arrow.uturn.forward")
+                }
+            }
+        }
+        let theirs = FollowUp.theirs(result.followups)
+        if !theirs.isEmpty {
+            Section("They Owe You") {
+                ForEach(Array(theirs.enumerated()), id: \.offset) { _, item in
+                    Label(item, systemImage: "arrow.uturn.backward")
                 }
             }
         }
