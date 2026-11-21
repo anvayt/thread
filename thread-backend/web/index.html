@@ -223,9 +223,14 @@
   .view.on{display:block;}
 
   /* ---- the graph: the whole window is its canvas ---- */
+  /* The map is zoomed and panned inside the SVG (see "the camera" in the
+     script), never by zooming the page, so the browser is told to leave
+     every touch on it alone. The dot grid moves and scales with the map. */
   #graph{position:fixed; inset:0; display:block; width:100%; height:100%;
-    background-image:radial-gradient(circle, var(--dot) 1px, transparent 1.5px); background-size:24px 24px;}
-  .glink{fill:none; stroke:var(--line-strong); stroke-width:1.2; stroke-linecap:round;
+    background-image:radial-gradient(circle, var(--dot) 1px, transparent 1.5px); background-size:24px 24px;
+    touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  /* lines keep their weight on screen at any zoom */
+  .glink{fill:none; stroke:var(--line-strong); stroke-width:1.2; stroke-linecap:round; vector-effect:non-scaling-stroke;
     transition:opacity .25s ease, stroke .25s ease;}
   .gnode{cursor:grab; transition:opacity .25s ease;}
   .gnode.person{cursor:pointer;}
@@ -237,7 +242,7 @@
   .initials{fill:#fff; text-anchor:middle;
     font:500 20px ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;}
   /* the name under a person has a halo in the canvas colour, to stay readable over lines */
-  .gnode.person .nname{text-anchor:middle; font-size:12.5px; font-weight:600; fill:var(--ink);
+  .gnode.person .nname, .gnode.person .fname{text-anchor:middle; font-size:12.5px; font-weight:600; fill:var(--ink);
     paint-order:stroke; stroke:var(--bg); stroke-width:3px; stroke-linejoin:round;}
   /* how many times you have met them, as a badge */
   .count rect{fill:var(--surface); stroke:var(--line); stroke-width:1;}
@@ -250,12 +255,39 @@
   #graph.focused .gnode:not(.near){opacity:.25;}
   #graph.focused .glink:not(.near){opacity:.2;}
   #graph.focused .glink.near{stroke:var(--accent-fill); stroke-width:1.6;}
+  /* a topic's links, drawn out in blue from the topic when it is tapped */
+  .trace{fill:none; stroke:var(--accent-fill); stroke-width:2.6; stroke-linecap:round;
+    pointer-events:none; vector-effect:non-scaling-stroke;}
   /* a link an answer points out between two people, drawn over the map */
   .alink{fill:none; stroke:var(--accent-fill); stroke-width:2; stroke-dasharray:5 6;
-    stroke-linecap:round; pointer-events:none;}
+    stroke-linecap:round; pointer-events:none; vector-effect:non-scaling-stroke;}
   /* a ring around whatever just arrived from the glasses */
   .ring{fill:none; stroke:var(--accent-fill); stroke-width:2; opacity:0; transition:opacity .3s ease;}
   .gnode.newin .ring{opacity:1;}
+  /* Zoomed out, names and tags keep the size they are read at, and the
+     script (placeLabels) shows only those that fit without overlapping, the
+     way Maps chooses which streets to name. A tag without room becomes a dot
+     of its colour. Far out, the meeting counts and shadows go too. */
+  .gnode.tag .dot{display:none; stroke:var(--surface); stroke-width:1.5; vector-effect:non-scaling-stroke;}
+  .gnode.tag.newin .dot{stroke:var(--accent-fill); stroke-width:2.5;}
+  .gnode.tag.nolabel > .face{display:none;}
+  .gnode.tag.nolabel > .dot{display:inline;}
+  .gnode.person.nolabel .nname, .gnode.person .fname, .gnode.person.short .nname{display:none;}
+  .gnode.person.short .fname{display:inline;}
+  #graph.lod-far .count{display:none;}
+  #graph.lod-far .gnode .body{filter:none;}
+
+  /* ---- map controls: back to everyone, and zoom where there is no pinch ---- */
+  .mapctl{position:fixed; z-index:13; right:20px; bottom:calc(var(--safe-b) + 18px); display:flex; flex-direction:column;
+    align-items:center; gap:10px; pointer-events:none;}
+  .mapctl > *{pointer-events:auto;}
+  /* "Show everyone" is only there when the map isn't already showing everyone */
+  .mapctl .fit{transition:opacity .2s ease, transform .35s var(--spring), visibility 0s;}
+  .mapctl .fit.away{opacity:0; transform:scale(.6); visibility:hidden;
+    transition:opacity .2s ease, transform .35s var(--spring), visibility 0s .35s;}
+  .zoombtns{position:relative; display:flex; flex-direction:column; border-radius:19px;}
+  .zoombtns button{width:38px; height:38px; padding:0; display:grid; place-items:center; border-radius:19px;}
+  .zoombtns hr{border:none; border-top:1px solid var(--line); margin:0 9px;}
 
   /* ---- asking: a field docked at the bottom, the answer above it ---- */
   .dock{position:fixed; z-index:15; left:var(--inset-l); right:20px; bottom:calc(var(--safe-b) + 18px); display:flex;
@@ -291,11 +323,11 @@
   #view-follow{padding:calc(var(--safe-t) + 92px) 20px calc(var(--safe-b) + 48px) var(--inset-l); transition:padding-left .5s var(--spring);}
   .narrow{max-width:720px;}
   /* where content meets the toolbar it blurs and fades, instead of a hard bar */
-  .edge{display:none; position:fixed; z-index:12; top:0; left:0; right:0; height:96px; pointer-events:none;
+  .edge{display:none; position:fixed; z-index:12; top:0; left:0; right:0; height:calc(var(--safe-t) + 96px); pointer-events:none;
     background:linear-gradient(var(--edge), transparent);
     -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
     -webkit-mask-image:linear-gradient(#000 50%, transparent); mask-image:linear-gradient(#000 50%, transparent);}
-  body[data-view="follow"] .edge{display:block;}
+  body[data-view="follow"] .edge, body[data-view="net"] .edge{display:block;}
 
   /* ---- notices that something arrived from the glasses ---- */
   #toasts{position:fixed; top:calc(var(--safe-t) + 66px); right:20px; z-index:60; display:flex; flex-direction:column; gap:8px;
@@ -341,6 +373,8 @@
     .narrow-only{display:none !important;}
     body.side-closed .sidebar{transform:translateX(calc(-100% - 24px)); visibility:hidden;
       transition:transform .5s var(--spring), visibility 0s .5s;}
+    /* the map controls take the bottom right corner */
+    .dock{right:70px;}
   }
   /* On a narrow window, which is to say a phone, the canvas fills the screen
      and the ask field sits at the bottom, where a thumb reaches it. Nothing
@@ -385,6 +419,9 @@
     /* iOS zooms the whole page into a text field set smaller than 16px */
     .askbar input, #transcript{font-size:16px;}
 
+    /* "Show everyone" sits under the More button, clear of the card and the ask field */
+    .mapctl{top:calc(var(--safe-t) + 60px); right:12px; bottom:auto;}
+
     #banner, #toasts{top:calc(var(--safe-t) + 70px); left:12px; right:12px;}
     #toasts{align-items:stretch;}
     .toast{width:auto;}
@@ -405,6 +442,21 @@
 <main>
   <section id="view-net" class="view on" aria-label="Network">
     <svg id="graph" role="img" aria-label="A map of the people you have met and what you talked about"></svg>
+
+    <div class="mapctl" id="mapctl">
+      <button class="glass round fit away" id="fitBtn" onclick="fitAll()" aria-label="Show everyone" title="Show everyone">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5v-4h4M12.5 3.5h4v4M16.5 12.5v4h-4M7.5 16.5h-4v-4"/></svg>
+      </button>
+      <div class="zoombtns glass wide-only" role="group" aria-label="Zoom">
+        <button onclick="zoomBy(1.6)" aria-label="Zoom in" title="Zoom in (+)">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
+        </button>
+        <hr>
+        <button onclick="zoomBy(1/1.6)" aria-label="Zoom out" title="Zoom out (−)">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 10h12"/></svg>
+        </button>
+      </div>
+    </div>
 
     <div class="dock" id="dock">
       <div id="answer" class="glass strong" role="region" aria-label="Answer" aria-live="polite">
@@ -690,14 +742,13 @@ const isPerson = d => d.kind === "person";
 const isMeeting = kind => kind === "encounter" || kind === "interaction";
 /* the legend's name for a kind; anything unknown is drawn as an object */
 const legendKind = kind => kind === "org" ? "company" : (KIND[kind] ? kind : "object");
-let nodes = [], links = [], sim, svg, defs, linkG, answerG, nodeG, W = 820, H = 540;
+let nodes = [], links = [], sim, svg, defs, worldG, linkG, traceG, answerG, nodeG, W = 820, H = 540;
 let dragging = false;
 
-/* The graph's canvas is the whole window, but the graph itself keeps to the
-   part the glass doesn't cover. On a wide window that is beside the sidebar,
-   below the toolbar and above the ask field. On a narrow one it is below the
-   toolbar and above the ask field and the sheet; when the sheet is at full
-   height the graph is left where it was at half. */
+/* The graph's canvas is the whole window, but the camera frames the graph in
+   the part the glass doesn't cover. On a wide window that is beside the
+   sidebar, below the toolbar and above the ask field. On a narrow one it is
+   below the toolbar and above the ask field. */
 let region = {x0:0, x1:W, y0:0, y1:H};
 /* The safe-area insets in pixels: what the status bar and tab bar cover. CSS
    resolves env() for padding but not inside a custom property, so a hidden
@@ -735,16 +786,33 @@ function initGraph(){
     .attr("x1",0).attr("y1",0).attr("x2",0).attr("y2",1);
   mono.append("stop").attr("offset",0).attr("stop-color","#A1A6B0");
   mono.append("stop").attr("offset",1).attr("stop-color","#7B7F88");
-  linkG = svg.append("g"); answerG = svg.append("g"); nodeG = svg.append("g");
+  /* everything on the map is in one group, which the camera moves */
+  worldG = svg.append("g").attr("class","world");
+  linkG = worldG.append("g"); traceG = worldG.append("g"); answerG = worldG.append("g"); nodeG = worldG.append("g");
+  /* a tap on the bare map lets go of a traced topic */
+  svg.on("click.trace", ev=>{ if(TRACE != null && !onNode(ev)) clearTrace(); });
   sim = d3.forceSimulation()
     .force("link", d3.forceLink().id(d=>d.id).distance(124).strength(.5))
     .force("charge", d3.forceManyBody().strength(-380))
     .force("center", d3.forceCenter(W/2, H/2))
-    /* a gentle pull inwards, so whoever is connected to nothing doesn't drift into a corner */
-    .force("x", d3.forceX(W/2).strength(n=>n.id === PINNED ? .8 : .05))
-    .force("y", d3.forceY(H/2).strength(n=>n.id === PINNED ? .8 : .075))
+    /* a gentle pull inwards, so whoever is connected to nothing doesn't drift
+       into a corner; sizeGraph shapes it to the window */
+    .force("x", d3.forceX(W/2).strength(.05))
+    .force("y", d3.forceY(H/2).strength(.075))
     .force("collide", d3.forceCollide(reach))
+    .force("drift", driftForce())
     .on("tick", ticked);
+  initCamera();
+  setDrift(true);
+  /* The app tells the page how tall its status bar and tab bar are a moment
+     after the page starts, without a resize: look again until they settle. */
+  let seen = "";
+  const recheck = setInterval(()=>{
+    const safe = safeInsets(), now = safe.t + "," + safe.b;
+    if(now !== seen){ seen = now; sizeGraph(); }
+  }, 500);
+  setTimeout(()=>clearInterval(recheck), 8000);
+  window.addEventListener("orientationchange", ()=>setTimeout(sizeGraph, 300));
   sizeGraph();
   /* On a phone the keyboard makes the window shorter. While someone types,
      the map keeps its height (the part under the keyboard is hidden) instead
@@ -769,7 +837,11 @@ function sizeGraph(){
   const [cx, cy] = middle();
   if(sim){
     sim.force("center", d3.forceCenter(cx, cy));
-    sim.force("x").x(cx); sim.force("y").y(cy);
+    /* the map takes the shape of the room it has, wide on a desktop and tall
+       on a phone held upright, so the camera can show it larger */
+    const a = Math.pow((region.x1 - region.x0)/(region.y1 - region.y0), 1.5);
+    const pull = s => Math.max(.02, Math.min(.15, s));
+    sim.force("x").x(cx).strength(pull(.06/a)); sim.force("y").y(cy).strength(pull(.06*a));
     sim.alpha(.3).restart();
   }
 }
@@ -839,14 +911,18 @@ function buildPerson(me){
   me.append("circle").attr("class","body").attr("r", PERSON_R);
   me.append("text").attr("class","initials").attr("dy", 6.5);
   me.append("text").attr("class","nname").attr("dy", PERSON_R + 18);
+  /* the first name alone, for when the whole name has no room (placeLabels) */
+  me.append("text").attr("class","fname").attr("dy", PERSON_R + 18);
   const badge = me.append("g").attr("class","count")
     .attr("transform", `translate(${PERSON_R * .74},${PERSON_R * .74})`);
   badge.append("rect").attr("height", 16).attr("y", -8).attr("rx", 8);
   badge.append("text").attr("dy", 3.6);
 }
 /* a tag: a capsule holding the kind's glyph and the name */
-function buildTag(me, d){
+function buildTag(node, d){
   const k = KIND[d.kind] || KIND.object;
+  /* the capsule is in a group of its own, so it can keep its size when the map is zoomed out */
+  const me = node.append("g").attr("class","face");
   me.append("rect").attr("class","ring").attr("height", TAG_H + 8).attr("y", -TAG_H/2 - 4).attr("rx", TAG_H/2 + 4);
   me.append("rect").attr("class","body").attr("height", TAG_H).attr("y", -TAG_H/2).attr("rx", TAG_H/2);
   const glyph = k.glyph === "circle"
@@ -854,6 +930,8 @@ function buildTag(me, d){
     : me.append("rect").attr("width", 8).attr("height", 8).attr("x", -4).attr("y", -4).attr("rx", 2);
   glyph.attr("class","glyph").style("fill", k.fill);
   me.append("text").attr("class","nname").attr("dy", 4.2);
+  /* what the tag shrinks to when there is no room for its name */
+  node.append("circle").attr("class","dot").attr("r", dotRadius(CAM.k)).style("fill", k.fill);
 }
 /* runs on every render (not just enter) so photos, names and counts stay in
    step without rebuilding the node */
@@ -864,7 +942,14 @@ function paintNode(el, d){
     const photo = patternFor(d), unnamed = isPlaceholder(d.label);
     me.select(".body").style("fill", photo || "url(#monogram)").classed("unnamed", unnamed);
     me.select(".initials").text(unnamed ? "?" : initials(d.label)).style("display", photo ? "none" : null);
-    me.select(".nname").text(trunc(d.label, 24));
+    const nm = me.select(".nname").text(trunc(d.label, 24));
+    /* how wide the name is on screen, for placeLabels; nothing while it is hidden */
+    const len = nm.node().getComputedTextLength();
+    if(len) d.nw = len * 12.5 / (parseFloat(nm.style("font-size")) || 12.5);
+    else if(!d.nw) d.nw = nm.text().length * 7;
+    const first = unnamed ? "" : String(d.label).split(/\s+/)[0];
+    me.select(".fname").text(first);
+    d.fw = first && first !== d.label ? first.length * 7.4 : 0;
     const text = String(d.count), w = Math.max(16, 10 + text.length * 6);
     const badge = me.select(".count").style("display", d.count ? null : "none");
     badge.select("rect").attr("width", w).attr("x", -w/2);
@@ -874,8 +959,11 @@ function paintNode(el, d){
   /* the capsule is as wide as its name; the name is measured once drawn, and
      estimated while the graph is out of sight */
   const name = me.select(".nname").text(trunc(d.label, 28));
-  const w = (name.node().getComputedTextLength() || name.text().length * 6.4) + 38;
+  /* a name hidden by the zoom measures nothing: keep what it measured before */
+  const len = name.node().getComputedTextLength();
+  const w = len ? len + 38 : (d.wFor === name.text() && d.w) || name.text().length * 6.4 + 38;
   d.w = w;
+  if(len) d.wFor = name.text();
   me.select(".ring").attr("x", -w/2 - 4).attr("width", w + 8);
   me.select(".body").attr("x", -w/2).attr("width", w);
   me.select(".glyph").attr("transform",
@@ -918,20 +1006,25 @@ function renderGraph(g, opts){
       const gs = enter.append("g")
         .attr("class", d=>"gnode " + (isPerson(d) ? "person" : "tag"))
         .attr("transform", d=>`translate(${d.x},${d.y})`)
-        .on("click", (ev,d)=>{ if(isPerson(d)) openPerson(d.label); })
+        .on("click", (ev,d)=>{
+          if(justDropped()) return;
+          if(isPerson(d)) openPerson(d.label); else traceTopic(d);
+        })
         .on("mouseenter", (ev,d)=>focusNode(d))
-        .on("mouseleave", unfocus);
+        .on("mouseleave", unfocus)
+        .on("pointerdown", grab);             // dragging a node: see "moving a node"
       gs.append("title");
       gs.each(function(d){
         if(isPerson(d)) buildPerson(d3.select(this)); else buildTag(d3.select(this), d);
       });
-      gs.call(d3.drag()
-        .on("start",(ev,d)=>{ dragging = true; if(!ev.active) sim.alphaTarget(.25).restart(); d.fx=d.x; d.fy=d.y; })
-        .on("drag",(ev,d)=>{ d.fx=ev.x; d.fy=ev.y; })
-        .on("end",(ev,d)=>{ dragging = false; if(!ev.active) sim.alphaTarget(0); d.fx=null; d.fy=null; unfocus(); }));
       return gs;
     });
   node.each(function(d){ paintNode(this, d); });
+  /* how connected each node is, for which names placeLabels shows first */
+  const degree = new Map();
+  for(const l of links) for(const id of [l.source, l.target]) degree.set(id, (degree.get(id) || 0) + 1);
+  for(const n of nodes) n.deg = degree.get(n.id) || 0;
+  levelOfDetail(CAM.k, true);
   /* highlight whatever just arrived, then let the class expire */
   if(fresh.size){
     const hot = node.filter(d=>fresh.has(d.id)).classed("newin", true);
@@ -950,21 +1043,97 @@ function renderGraph(g, opts){
   else if(ANSWERED) lightAnswer();
   return fresh;
 }
+/* Nodes are no longer held inside the window: the map takes the room it
+   needs and the camera frames it (see "the camera"). */
+/* each line bows slightly, always to the same side, so lines leaving one
+   person fan out instead of crossing at the hub */
+function linkPath(l){
+  const dx = l.target.x - l.source.x, dy = l.target.y - l.source.y;
+  const mx = (l.source.x + l.target.x)/2 - dy * .12, my = (l.source.y + l.target.y)/2 + dx * .12;
+  return `M${l.source.x},${l.source.y}Q${mx},${my} ${l.target.x},${l.target.y}`;
+}
+
+/* ---------- idle drift ----------
+   Left alone, the map drifts slowly, each node round its own small loop, so
+   it looks alive without anyone moving it. It stops the moment someone taps a
+   name or a topic, and comes back when the card or the topic is let go. Off
+   for anyone who asked for reduced motion. */
+const DRIFT_ALPHA = .012;               // keeps the layout warm enough to move
+let DRIFT = false;
+function driftForce(){
+  let ns = [];
+  const force = ()=>{
+    if(!DRIFT) return;
+    const t = performance.now() / 1000;
+    for(const n of ns){
+      if(n.fx != null) continue;          // held by a finger
+      if(n.phase == null) n.phase = Math.random() * Math.PI * 2;
+      n.vx += Math.cos(t * .33 + n.phase) * .045;
+      n.vy += Math.sin(t * .27 + n.phase * 1.7) * .045;
+    }
+  };
+  force.initialize = n => { ns = n; };
+  return force;
+}
+function setDrift(on){
+  DRIFT = !!on && !reducedMotion();
+  if(dragging) return;                   // a drag sets its own heat, and drop() hands back
+  sim.alphaTarget(DRIFT ? DRIFT_ALPHA : 0);
+  if(DRIFT) sim.restart();
+}
+
+/* ---------- a topic, traced ----------
+   Tapping a topic draws its links out in blue, from the topic to each person,
+   one after another, and picks those people out. A tap on the bare map, a
+   person, or a question lets it go. */
+let TRACE = null;                       // the traced topic's node id
+function traceTopic(d){
+  clearTrace(true);
+  TRACE = d.id;
+  setDrift(false);
+  focusNode(d);
+  const mine = links.filter(l => l.source.id === d.id || l.target.id === d.id);
+  traceG.selectAll("path").data(mine).join("path").attr("class", "trace").attr("d", linkPath)
+    .each(function(l, i){
+      const len = this.getTotalLength();
+      /* draw from the topic's end of the line: forwards if it is the start, backwards if not */
+      const from = l.source.id === d.id ? len : -len;
+      const line = d3.select(this).attr("stroke-dasharray", `${len} ${len}`).attr("stroke-dashoffset", from);
+      if(reducedMotion()){ line.attr("stroke-dasharray", null).attr("stroke-dashoffset", null); return; }
+      line.transition().delay(i * 90).duration(650).ease(d3.easeCubicOut).attr("stroke-dashoffset", 0)
+        .on("end", function(){ d3.select(this).attr("stroke-dasharray", null).attr("stroke-dashoffset", null); });
+    });
+}
+function clearTrace(keepDrift){
+  if(TRACE == null && traceG.selectAll("path").empty()) return;
+  TRACE = null;
+  traceG.selectAll("path").interrupt().remove();
+  if(!keepDrift){
+    if(!OPEN_NAME) setDrift(true);
+    unfocus();
+  }
+}
+
+/* Up to this many nodes the map keeps to the free region at reading size, as
+   it always has; past it, it spreads out at the same size and is zoomed out
+   to be seen whole. */
+const CLAMP_MAX = 24;
 function ticked(){
-  for(const n of nodes){
-    const px = isPerson(n) ? PERSON_R + 20 : (n.w || 80)/2 + 6;
-    n.x = Math.max(region.x0 + px, Math.min(region.x1 - px, n.x));
-    n.y = Math.max(region.y0 + 34, Math.min(region.y1 - 48, n.y));
+  if(nodes.length <= CLAMP_MAX){
+    for(const n of nodes){
+      const px = isPerson(n) ? PERSON_R + 20 : (n.w || 80)/2 + 6;
+      n.x = Math.max(region.x0 + px, Math.min(region.x1 - px, n.x));
+      n.y = Math.max(region.y0 + 34, Math.min(region.y1 - 48, n.y));
+    }
   }
   /* each line bows slightly, always to the same side, so lines leaving one
      person fan out instead of crossing at the hub */
-  linkG.selectAll("path").attr("d", l=>{
-    const dx = l.target.x - l.source.x, dy = l.target.y - l.source.y;
-    const mx = (l.source.x + l.target.x)/2 - dy * .12, my = (l.source.y + l.target.y)/2 + dx * .12;
-    return `M${l.source.x},${l.source.y}Q${mx},${my} ${l.target.x},${l.target.y}`;
-  });
+  linkG.selectAll("path").attr("d", linkPath);
+  traceG.selectAll("path").attr("d", linkPath);
   nodeG.selectAll("g.gnode").attr("transform", d=>`translate(${d.x},${d.y})`);
   drawAnswerLinks();
+  follow();
+  scheduleLabels();
 }
 /* Pointing at something brings what it is connected to forward and fades the
    rest. */
@@ -976,20 +1145,25 @@ function focusNode(d){
   svg.classed("focused", true);
   nodeG.selectAll("g.gnode").classed("near", n=>near.has(n.id));
   linkG.selectAll("path").classed("near", touches);
+  NEAR = near; scheduleLabels();
 }
 function unfocus(){
   if(dragging) return;
   const kept = pinnedNode();
   if(kept){ focusNode(kept); return; }
   if(ANSWERED){ lightAnswer(); return; }
+  const traced = TRACE != null && nodes.find(n => n.id === TRACE);
+  if(traced){ focusNode(traced); return; }
   svg.classed("focused", false);
   svg.selectAll(".near").classed("near", false);
+  NEAR = new Set(); scheduleLabels();
 }
 /* What an answer is about stays lit while it is open: the people it names,
    the topics it links them through, and a dashed line for each link it
    points out between two people. */
 let ANSWERED = null;                   // {people, topics, pairs}
 function showAnswerOnMap(res){
+  clearTrace();
   const people = new Set(arr(res.matches).map(m=>m && m.name).filter(Boolean));
   const topics = new Set(), pairs = [];
   for(const l of arr(res.links)){
@@ -1001,21 +1175,34 @@ function showAnswerOnMap(res){
     if(l.via) topics.add(String(l.via).toLowerCase());
   }
   ANSWERED = people.size ? {people, topics, pairs} : null;
-  if(ANSWERED) lightAnswer(); else clearAnswerOnMap();
+  if(ANSWERED){ lightAnswer(); frameAnswer(); } else clearAnswerOnMap();
 }
 function clearAnswerOnMap(){
   if(!answerG || (!ANSWERED && answerG.selectAll("path").empty())) return;
   ANSWERED = null;
   answerG.selectAll("path").remove();
   unfocus();
+  releaseCamera();
+}
+const litByAnswer = n => isPerson(n) ? ANSWERED.people.has(n.label)
+                                     : ANSWERED.topics.has(String(n.label).toLowerCase());
+/* the camera brings what an answer names into view, above the answer; when
+   the answer leaves too little room above it (a tall answer on a wide
+   window), in the whole free region, beside it */
+function frameAnswer(){
+  const lit = nodes.filter(litByAnswer);
+  if(!lit.length) return;
+  let box = visibleBox();
+  if(box.y1 - box.y0 < .45 * (region.y1 - region.y0)) box = region;
+  holdCamera();
+  flyTo(framing(lit, box, READ_K, 40));
 }
 function lightAnswer(){
-  const lit = n => isPerson(n) ? ANSWERED.people.has(n.label)
-                               : ANSWERED.topics.has(String(n.label).toLowerCase());
-  const near = new Set(nodes.filter(lit).map(n=>n.id));
+  const near = new Set(nodes.filter(litByAnswer).map(n=>n.id));
   svg.classed("focused", true);
   nodeG.selectAll("g.gnode").classed("near", n=>near.has(n.id));
   linkG.selectAll("path").classed("near", l=>near.has(l.source.id) && near.has(l.target.id));
+  NEAR = near; scheduleLabels();
   const byName = new Map(nodes.filter(isPerson).map(n=>[n.label, n]));
   const pairs = ANSWERED.pairs.map(([a, b])=>[byName.get(a), byName.get(b)]).filter(([a, b])=>a && b);
   answerG.selectAll("path").data(pairs).join("path").attr("class", "alink");
@@ -1025,19 +1212,365 @@ function drawAnswerLinks(){
   if(answerG) answerG.selectAll("path").attr("d", ([a, b])=>`M${a.x},${a.y}L${b.x},${b.y}`);
 }
 
-/* On a narrow window the person whose page is open stays highlighted, and is
-   drawn to the middle of what the sheet leaves visible, the way Find My
-   centres its map on whoever is chosen. */
+/* On a narrow window the person whose card is open stays highlighted, and the
+   camera brings them to the middle of what the card leaves visible, close
+   enough to read, the way Find My centres its map on whoever is chosen. The
+   map itself is left where it is. */
 let PINNED = null;                     // that person's node id
 function pinnedNode(){ return PINNED ? nodes.find(n=>n.id === PINNED) : null; }
 function pinPerson(name){
   const d = name ? nodes.find(n=>isPerson(n) && n.label === name) : null;
   PINNED = d ? d.id : null;
-  /* setting a force's strength again makes it read PINNED afresh */
-  for(const axis of ["x", "y"]) sim.force(axis).strength(sim.force(axis).strength());
-  sim.alpha(Math.max(sim.alpha(), .5)).restart();
-  if(d) focusNode(d); else unfocus();
+  if(d){ focusNode(d); bringToView(d, true); }
+  else { unfocus(); releaseCamera(); }
 }
+
+/* ---------- the camera ----------
+   The map is laid out at the size it reads well at, however many people are
+   on it, and a camera (d3.zoom, inside the SVG) moves over it. On a phone:
+   pinch to zoom, drag the canvas with one finger to pan, double-tap to zoom
+   in; one finger on a node still drags the node. On a Mac, as in Freeform:
+   scroll to pan, pinch or ⌘-scroll to zoom, double-click to zoom in, and
+   the + and − buttons or keys.
+
+   Until you move it, the camera keeps everyone in view, easing after the
+   layout as it settles and as people arrive. Opening someone's card flies to
+   them; an answer frames the people it names. Closing either goes back to
+   everyone, unless you moved the camera meanwhile. "Show everyone" is there
+   whenever the map isn't showing everyone. */
+const READ_K = 1;                      // the zoom the map is drawn to be read at
+const LOD_FAR = .5;                    // below this: no counts or shadows, single-person topics are dots
+let zoom, CAM = d3.zoomIdentity;
+let FOLLOW = true;                     // the camera follows the map on its own
+let FIT_ALL = false;                   // ...zoomed out to everyone ("Show everyone"), not at reading size
+let RESUME = false;                    // go back to everyone once what took the camera closes
+let FLYING = 0, FLY_TO = null;         // the camera move under way, if any, and where it ends
+let BOUNDS = null;                     // the box around everyone, in map coordinates
+let FAR = false, LAST_DBL = 0, LAST_TAP2 = 0;
+let NEAR = new Set();                  // the ids picked out (focusNode, lightAnswer): their names always show
+const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const onNode = ev => !!(ev.target && ev.target.closest && ev.target.closest(".gnode"));
+const dotRadius = k => Math.min(14, 5.5 / k);
+
+function initCamera(){
+  zoom = d3.zoom()
+    .scaleExtent([.1, READ_K])
+    .filter(ev=>{
+      if(ev.type === "wheel") return ev.ctrlKey || ev.metaKey;   // a trackpad pinch, or ⌘-scroll
+      /* one finger on a node drags the node; a second finger anywhere makes a pinch */
+      if(ev.type === "touchstart") return ev.touches.length > 1 || !onNode(ev);
+      return !ev.button && !onNode(ev);         // a mouse press or a double-click, on the canvas
+    })
+    .constrain(keepInView)
+    .duration(reducedMotion() ? 0 : 300)
+    .on("zoom", ev=>{
+      zoomed(ev);
+      /* moved by a hand (not on a press alone, and not by the program) */
+      if(ev.sourceEvent && (FOLLOW || RESUME)) tookCamera();
+    });
+  svg.call(zoom);
+  /* a double tap or double-click zooms in; a single tap near a face waits to
+     see whether it was the first of two (below) */
+  const zoomIn = svg.on("dblclick.zoom");
+  svg.on("dblclick.zoom", function(ev, ...a){
+    const now = performance.now();
+    /* iOS may follow a double tap, which d3.zoom reads from the touches,
+       with a dblclick of its own: zoom once */
+    if(ev.type === "dblclick" && now - LAST_TAP2 < 600) return;
+    if(ev.type !== "dblclick") LAST_TAP2 = now;
+    LAST_DBL = now;
+    return zoomIn.call(this, ev, ...a);
+  });
+  /* plain scrolling pans */
+  svg.on("wheel.pan", ev=>{
+    ev.preventDefault();                        // never the page's own zoom
+    if(ev.ctrlKey || ev.metaKey) return;        // d3.zoom has those
+    const px = ev.deltaMode === 1 ? 16 : ev.deltaMode === 2 ? H : 1;
+    tookCamera();
+    zoom.translateBy(svg, -ev.deltaX * px / CAM.k, -ev.deltaY * px / CAM.k);
+  }, {passive:false});
+  /* iOS: a pinch on the map is never a pinch on the page */
+  svg.on("gesturestart", ev=>ev.preventDefault());
+  svg.on("touchmove.grab", ev=>{ if(GRAB) ev.preventDefault(); }, {passive:false});
+  svg.on("click.pick", pickNear);
+  const motion = matchMedia("(prefers-reduced-motion: reduce)");
+  if(motion.addEventListener) motion.addEventListener("change", ()=>zoom.duration(reducedMotion() ? 0 : 300));
+}
+function zoomed(ev){
+  CAM = ev.transform;
+  worldG.attr("transform", CAM);
+  /* the dot grid moves with the map, at a spacing that stays comfortable */
+  let s = 24 * CAM.k;
+  while(s < 16) s *= 2;
+  while(s > 40) s /= 2;
+  const el = svg.node();
+  el.style.backgroundSize = s + "px " + s + "px";
+  el.style.backgroundPosition = CAM.x + "px " + CAM.y + "px";
+  levelOfDetail(CAM.k);
+}
+/* Zoomed out, the people get smaller but their names and the tags keep the
+   size they are read at, and placeLabels picks which fit. */
+let LABEL_S = 1;
+function levelOfDetail(k, all){
+  const far = k < LOD_FAR;
+  if(far !== FAR){ FAR = far; svg.classed("lod-far", far); }
+  const s = Math.max(1, READ_K / k);
+  if(s !== LABEL_S || all){
+    LABEL_S = s;
+    nodeG.selectAll(".gnode.person .nname, .gnode.person .fname").attr("dy", PERSON_R + 18*s)
+      .style("font-size", s === 1 ? null : 12.5*s + "px").style("stroke-width", s === 1 ? null : 3*s + "px");
+    nodeG.selectAll(".gnode.tag .face").attr("transform", s === 1 ? null : `scale(${s})`);
+    nodeG.selectAll(".dot").attr("r", dotRadius(k));
+  }
+  scheduleLabels();
+}
+/* Which names and tags are shown when zoomed out: whoever is picked out
+   first, then the people met most often and best connected, then the topics
+   most people share. Each goes on the map only where it overlaps no name,
+   tag or face already there. Far out, a topic only one person mentioned
+   is always a dot. */
+let LABELS_DUE = false;
+function scheduleLabels(){
+  if(!LABELS_DUE){ LABELS_DUE = true; requestAnimationFrame(placeLabels); }
+}
+function placeLabels(){
+  LABELS_DUE = false;
+  const k = CAM.k, hidden = new Set(), short = new Set();
+  if(k < READ_K){
+    const rank = n => (NEAR.has(n.id) ? 1e6 : 0)
+      + (isPerson(n) ? 1e4 + (n.count || 0) * 100 + n.deg : n.deg);
+    /* every face, and every tag as the dot it may become, is in the way from the start */
+    const placed = [], R = PERSON_R * k + 3, r = dotRadius(k) * k + 2;
+    for(const n of nodes){
+      const x = CAM.applyX(n.x), y = CAM.applyY(n.y), e = isPerson(n) ? R : r;
+      placed.push([x - e, y - e, x + e, y + e, n.id, NEAR.has(n.id)]);
+    }
+    for(const n of nodes.slice().sort((a, b)=>rank(b) - rank(a))){
+      if(!isPerson(n) && n.deg < 2 && k < LOD_FAR && !NEAR.has(n.id)){ hidden.add(n.id); continue; }
+      const x = CAM.applyX(n.x), y = CAM.applyY(n.y), near = NEAR.has(n.id);
+      const top = isPerson(n) ? y + PERSON_R*k + 6 : y - TAG_H/2;
+      const fits = w=>{
+        /* one already showing gets a little slack, so names don't flicker as the map settles */
+        const e = n.labelled ? 3 : 0;
+        const box = [x - w/2 + e, top + e, x + w/2 - e, top + (isPerson(n) ? 16 : TAG_H) - e];
+        /* not cut off by the window's edge or the glass beside and above the map */
+        const inside = box[0] >= region.x0 - 8 && box[2] <= region.x1 + 8 && box[1] >= region.y0 - 24;
+        /* what is picked out may cover faded faces and dots, not another name or a lit face */
+        const free = (near || inside) && !placed.some(p=>p[4] !== n.id && (p[5] || !near)
+          && p[0] < box[2] && box[0] < p[2] && p[1] < box[3] && box[1] < p[3]);
+        if(free) placed.push([...box, n.id, true]);
+        return free;
+      };
+      /* a person whose whole name has no room may still have room for their first name */
+      if(fits(isPerson(n) ? n.nw || 60 : n.w || 80)) continue;
+      if(isPerson(n) && n.fw && fits(n.fw)) short.add(n.id); else hidden.add(n.id);
+    }
+  }
+  nodeG.selectAll("g.gnode").each(function(d){
+    const show = !hidden.has(d.id), brief = short.has(d.id);
+    if(show !== d.labelled){ d.labelled = show; this.classList.toggle("nolabel", !show); }
+    if(brief !== !!d.brief){ d.brief = brief; this.classList.toggle("short", brief); }
+  });
+}
+/* However far it is panned, the map's outline always reaches the middle of
+   the window, so it can't be lost off screen. */
+function keepInView(t, ext){
+  if(!BOUNDS) return t;
+  const mx = (ext[0][0] + ext[1][0])/2, my = (ext[0][1] + ext[1][1])/2;
+  const x0 = t.applyX(BOUNDS.x0), x1 = t.applyX(BOUNDS.x1);
+  const y0 = t.applyY(BOUNDS.y0), y1 = t.applyY(BOUNDS.y1);
+  const dx = x1 < mx ? mx - x1 : x0 > mx ? mx - x0 : 0;
+  const dy = y1 < my ? my - y1 : y0 > my ? my - y0 : 0;
+  return dx || dy ? t.translate(dx / t.k, dy / t.k) : t;
+}
+/* the box around some nodes, with room for a person's name and a tag's width */
+function boundsOf(list){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for(const n of list){
+    const px = isPerson(n) ? PERSON_R + 20 : (n.w || 80)/2 + 6;
+    x0 = Math.min(x0, n.x - px); x1 = Math.max(x1, n.x + px);
+    y0 = Math.min(y0, n.y - 34); y1 = Math.max(y1, n.y + 48);
+  }
+  return x0 < x1 ? {x0, x1, y0, y1} : null;
+}
+/* the camera that shows `list` inside `box` (a part of the window), never
+   closer than `maxK`, with `inset` pixels to spare at the sides for names */
+function framing(list, box, maxK, inset){
+  const b = boundsOf(list), i = inset || 0;
+  if(!b) return CAM;
+  const k = Math.max(.05, Math.min(maxK, (box.x1 - box.x0 - 2*i)/(b.x1 - b.x0), (box.y1 - box.y0)/(b.y1 - b.y0)));
+  return d3.zoomIdentity.translate((box.x0 + box.x1)/2, (box.y0 + box.y1)/2)
+    .scale(k).translate(-(b.x0 + b.x1)/2, -(b.y0 + b.y1)/2);
+}
+/* the part of the window nothing covers: the free region, less a card or an
+   answer docked at the bottom */
+function visibleBox(){
+  const box = Object.assign({}, region);
+  for(const el of isWide() ? [$("answer")] : [$("sidebar"), $("answer")]){
+    const r = el.getBoundingClientRect();
+    if(r.height) box.y1 = Math.min(box.y1, r.top - 16);
+  }
+  if(box.y1 - box.y0 < 120) box.y1 = box.y0 + 120;
+  return box;
+}
+function flyTo(t){
+  if(reducedMotion()){ svg.interrupt().call(zoom.transform, t); return; }
+  const id = FLYING = (FLYING || 0) + 1;
+  FLY_TO = t;
+  svg.transition().duration(550).ease(d3.easeCubicInOut).call(zoom.transform, t)
+    .on("end.fly interrupt.fly", ()=>{ if(FLYING === id) FLYING = 0; });
+}
+/* While it keeps everyone in view, the camera eases towards them on every
+   tick of the layout, and stays put while a node is being dragged. */
+function follow(){
+  BOUNDS = boundsOf(nodes);
+  if(!BOUNDS) return;
+  const fit = framing(nodes, region, READ_K);
+  zoom.scaleExtent([Math.min(.5, fit.k * .8), READ_K]);
+  paintFit(fit);
+  if(!FOLLOW || FLYING || dragging || svg.node().__zooming) return;    // nor during a gesture
+  /* The map stays at the size it is read at however many people there are,
+     and only slides to stay centred. Zooming out to see everyone is a pinch,
+     or "Show everyone". */
+  const want = FIT_ALL ? fit : centred(BOUNDS);
+  const a = reducedMotion() ? 1 : .2;
+  const k = CAM.k + (want.k - CAM.k)*a, x = CAM.x + (want.x - CAM.x)*a, y = CAM.y + (want.y - CAM.y)*a;
+  if(Math.abs(k - CAM.k) < 1e-4 && Math.abs(x - CAM.x) < .1 && Math.abs(y - CAM.y) < .1) return;
+  svg.call(zoom.transform, d3.zoomIdentity.translate(x, y).scale(k));
+}
+/* "Show everyone", the button and the 0 key */
+/* the map at reading size, its middle in the middle of the free region */
+function centred(b){
+  const k = READ_K;
+  return d3.zoomIdentity.translate((region.x0 + region.x1)/2 - k*(b.x0 + b.x1)/2,
+                                   (region.y0 + region.y1)/2 - k*(b.y0 + b.y1)/2).scale(k);
+}
+/* back to how the map opens: reading size, centred */
+function goHome(){
+  FOLLOW = true; FIT_ALL = false; RESUME = false;
+  BOUNDS = boundsOf(nodes);
+  paintFit();
+  if(BOUNDS) flyTo(centred(BOUNDS));
+}
+function fitAll(){
+  FOLLOW = true; FIT_ALL = true; RESUME = false;
+  paintFit();
+  BOUNDS = boundsOf(nodes);
+  if(BOUNDS) flyTo(framing(nodes, region, READ_K));
+}
+function zoomBy(f){
+  tookCamera();
+  const b = visibleBox(), p = [(b.x0 + b.x1)/2, (b.y0 + b.y1)/2];
+  zoom.scaleBy(reducedMotion() ? svg : svg.transition().duration(300), f, p);
+}
+/* someone moved the camera: it stays where they put it */
+function tookCamera(){
+  FOLLOW = false; FIT_ALL = false; RESUME = false;
+  paintFit();
+}
+/* a card or an answer takes the camera for a while */
+function holdCamera(){
+  if(FOLLOW){ FOLLOW = false; RESUME = FIT_ALL ? "all" : "home"; }
+  paintFit();
+}
+/* and gives it back: to everyone, if that is where it was. Left a moment,
+   because closing one thing is often opening another. */
+function releaseCamera(){
+  queueMicrotask(()=>{ if(RESUME && !PINNED && !ANSWERED) (RESUME === "all" ? fitAll : goHome)(); });
+}
+/* "Show everyone" is there whenever someone is out of view */
+function paintFit(fit){
+  if(!fit && BOUNDS) fit = framing(nodes, region, READ_K);
+  const allInView = FOLLOW && (FIT_ALL || !fit || fit.k >= READ_K - .01);
+  $("fitBtn").classList.toggle("away", allInView);
+}
+/* `d` to the middle of what is visible; `close`: near enough to read */
+function bringToView(d, close){
+  const b = visibleBox(), cam = FLYING ? FLY_TO : CAM;     // mid-flight, go by where it is headed
+  const k = close ? Math.max(cam.k, READ_K) : cam.k;
+  holdCamera();
+  flyTo(d3.zoomIdentity.translate((b.x0 + b.x1)/2, (b.y0 + b.y1)/2).scale(k).translate(-d.x, -d.y));
+}
+/* only if they are out of sight, say behind a card that grew */
+function keepInSight(d){
+  const cam = FLYING ? FLY_TO : CAM, b = visibleBox(), x = cam.applyX(d.x), y = cam.applyY(d.y);
+  if(x < b.x0 + 24 || x > b.x1 - 24 || y < b.y0 + 24 || y > b.y1 - 24) bringToView(d, false);
+}
+/* Zoomed out, a face is smaller than a fingertip, so a tap on the canvas
+   near one opens it (a finger only: a mouse is precise). It waits a moment
+   first, in case the tap was the first of a double tap, which zooms instead. */
+function pickNear(ev){
+  if(onNode(ev) || justDropped() || LAST_POINTER !== "touch") return;
+  const [x, y] = CAM.invert(d3.pointer(ev, svg.node()));
+  const within = PERSON_R + 22 / CAM.k;
+  let best = null, bestD = within;
+  for(const n of nodes){
+    if(!isPerson(n)) continue;
+    const dist = Math.hypot(n.x - x, n.y - y);
+    if(dist < bestD){ best = n; bestD = dist; }
+  }
+  if(best) setTimeout(()=>{ if(performance.now() - LAST_DBL > 600) openPerson(best.label); }, 320);
+}
+
+/* ---------- moving a node ----------
+   With a mouse or one finger. A node takes the pointer that lands on it, so
+   dragging a node moves the node and dragging the canvas moves the camera. A
+   second finger lets the node go and makes the gesture a pinch. Written on
+   pointer events rather than d3.drag: d3.drag stops a finger's later touch
+   events from reaching d3.zoom, which breaks a pinch that starts on a node. */
+let GRAB = null;                       // {d, id, x, y, dx, dy, moved}
+let DROPPED = -1e9;                    // when a drag last ended, to swallow its click
+const FINGERS = new Set();             // touches on the screen
+let LAST_POINTER = "";                 // "touch", "mouse" or "pen": what last pressed
+const justDropped = () => performance.now() - DROPPED < 350;
+function grab(ev, d){
+  if(ev.button || (ev.pointerType === "touch" && FINGERS.size > 1)) return;
+  if(ev.pointerType === "mouse") ev.preventDefault();      // no text selection
+  const [x, y] = d3.pointer(ev, worldG.node());
+  GRAB = {d, id:ev.pointerId, x:ev.clientX, y:ev.clientY, dx:d.x - x, dy:d.y - y, moved:false};
+  try{ this.setPointerCapture(ev.pointerId); }catch(e){}
+}
+function dragMove(ev){
+  if(!GRAB || ev.pointerId !== GRAB.id) return;
+  if(!GRAB.moved){
+    if(Math.hypot(ev.clientX - GRAB.x, ev.clientY - GRAB.y) < 4) return;   // still a tap
+    GRAB.moved = dragging = true;
+    sim.alphaTarget(.25).restart();
+  }
+  const [x, y] = d3.pointer(ev, worldG.node());   // map coordinates, whatever the zoom
+  GRAB.d.fx = x + GRAB.dx; GRAB.d.fy = y + GRAB.dy;
+}
+function drop(ev){
+  if(!GRAB || (ev && ev.pointerId !== GRAB.id)) return;
+  const {d, moved} = GRAB;
+  GRAB = null;
+  if(!moved) return;                    // a tap: the click that follows opens them
+  DROPPED = performance.now();
+  dragging = false;
+  sim.alphaTarget(DRIFT ? DRIFT_ALPHA : 0);
+  d.fx = d.fy = null;
+  unfocus();
+}
+window.addEventListener("pointermove", dragMove);
+window.addEventListener("pointerup", drop);
+window.addEventListener("pointercancel", drop);
+window.addEventListener("pointerdown", ev=>{
+  LAST_POINTER = ev.pointerType;
+  if(ev.pointerType !== "touch") return;
+  if(ev.isPrimary) FINGERS.clear();     // the first finger of a new gesture
+  FINGERS.add(ev.pointerId);
+  if(FINGERS.size > 1 && GRAB) drop();  // a second finger: let the node go
+}, true);
+for(const type of ["pointerup", "pointercancel"])
+  window.addEventListener(type, ev=>{ FINGERS.delete(ev.pointerId); }, true);
+/* + and − zoom, 0 shows everyone, while nothing is being typed */
+document.addEventListener("keydown", e=>{
+  if(e.metaKey || e.ctrlKey || e.altKey || document.body.dataset.view !== "net"
+     || document.querySelector("dialog[open]") || /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  const by = {"+":1.6, "=":1.6, "-":1/1.6, "_":1/1.6}[e.key];
+  if(by){ e.preventDefault(); zoomBy(by); }
+  else if(e.key === "0"){ e.preventDefault(); fitAll(); }
+});
 
 /* ---------- people, in the sidebar ---------- */
 function rosterPeople(data){
@@ -1206,7 +1739,8 @@ function closePanel(){
   showDetail(false);
   showCard(false);
   OPEN_NAME = "";
-  if(PINNED) pinPerson(null);
+  setDrift(true);
+  if(PINNED) pinPerson(null); else releaseCamera();
   /* going back puts the keyboard on the person just left */
   const row = [...document.querySelectorAll("#roster .prow")].find(el=>el.dataset.name === was);
   if(hadFocus && row) row.focus({preventScroll:true});
@@ -1297,6 +1831,8 @@ function dropSections(md, titles){
 async function openPerson(name){
   if(!name) return;
   OPEN_NAME = name;
+  clearTrace(true);
+  setDrift(false);
   $("cardName").textContent = name;
   paintCardHead(name);
   showDetail(true);
@@ -1306,6 +1842,10 @@ async function openPerson(name){
     closeAnswer();
     showCard(true);
     pinPerson(name);
+  }else{
+    /* on a wide window, someone chosen from the list is brought into view if the map has them out of sight */
+    const d = nodes.find(n=>isPerson(n) && n.label === name);
+    if(d) keepInSight(d);
   }
   document.querySelector("#panel .pscroll").scrollTop = 0;
   $("closeCard").focus({preventScroll:true});
@@ -1333,6 +1873,9 @@ async function openPerson(name){
   const known = (rec && rec.found !== false) || (card && card.name);
   body.innerHTML = ((known ? followHtml(name) : "") + lens + ex.html + mdGroups(src))
     || '<div class="empty">' + esc(failText(failed, "Nothing saved about this person yet.")) + '</div>';
+  /* the card has grown: keep them clear of it */
+  const kept = pinnedNode();
+  if(kept) keepInSight(kept);
 }
 
 /* ---------- drafting a follow-up ----------
@@ -1404,14 +1947,16 @@ document.addEventListener("keydown", e=>{
 });
 /* A click elsewhere closes the menu and whatever the ask field brought up. The
    path is used, not contains(): a row that redraws its own list is no longer
-   in the document by the time the click gets here. */
+   in the document by the time the click gets here. A tap on the bare map
+   leaves an answer open, so its people can be looked around, and a double
+   tap there zooms. */
 document.addEventListener("click", e=>{
   const path = e.composedPath();
   if(!path.includes($("more"))) closeMenu();
-  if(!path.includes($("dock"))) closeAnswer();
+  if(!path.includes($("dock")) && e.target !== $("graph")) closeAnswer();
 });
 /* A touch anywhere outside the ask field puts the keyboard away. iOS doesn't
-   do it on its own, and doesn't send a click for a tap on the map's canvas. */
+   do it on its own, and a touch that pans the map sends no click. */
 document.addEventListener("pointerdown", e=>{
   const q = $("q");
   if(document.activeElement === q && !e.composedPath().includes($("dock"))) q.blur();
