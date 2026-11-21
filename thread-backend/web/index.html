@@ -330,8 +330,8 @@
   /* On a narrow window, which is to say a phone, the layout is Find My's: the
      canvas fills the screen and the people are a sheet at the bottom that is
      pulled up. The sheet rests at three heights, which the script sets as
-     --sheet-h. The ask field moves to the top, under the toolbar, so that the
-     bottom belongs to the sheet. */
+     --sheet-h. The ask field sits just above the sheet, where a thumb reaches
+     it, and rides up and down with it; at full height the sheet covers it. */
   @media (max-width:820px){
     body, body.side-closed{--inset-l:12px;}
     .wide-only{display:none !important;}
@@ -377,12 +377,15 @@
     .seg button{padding:6px 9px;}          /* so the toolbar still fits a 360-wide phone */
     .legend{display:none;}
 
-    /* ---- asking, at the top; what it brings up opens below it ---- */
-    .dock{top:62px; bottom:auto; right:12px; flex-direction:column-reverse; align-items:stretch;}
+    /* ---- asking, just above the sheet; what it brings up opens above it ---- */
+    .dock{top:auto; bottom:calc(var(--sheet-h, 66px) + 18px); right:12px; align-items:stretch;
+      transition:bottom .5s var(--spring), opacity .25s ease;}
+    body.sheet-dragging .dock{transition:opacity .25s ease;}
+    body[data-detent="full"] .dock{opacity:0; pointer-events:none;}
     .dock > *{width:100%;}
-    #answerBody{max-height:min(38vh, 320px);}
+    #answerBody{max-height:min(34vh, 300px);}
 
-    #banner, #toasts{top:118px; left:12px; right:12px;}
+    #banner, #toasts{top:70px; left:12px; right:12px;}
     #toasts{align-items:stretch;}
     .toast{width:auto;}
     /* room at the bottom for the sheet at its smallest */
@@ -668,8 +671,8 @@ const DETENTS = ["peek", "half", "full"];
 let detent = "peek";
 function detentHeight(name){
   const h = window.innerHeight;
-  /* at full height it stops under the toolbar, and under the ask field where that shows */
-  const full = Math.max(200, h - (document.body.dataset.view === "follow" ? 70 : 118) - 8);
+  /* at full height it stops under the toolbar */
+  const full = Math.max(200, h - 70 - 8);
   if(name === "full") return full;
   if(name === "half") return Math.round(Math.min(h * .46, full));
   return 66;
@@ -678,12 +681,18 @@ function setDetent(name){
   detent = name;
   const el = $("sidebar");
   el.dataset.detent = name;
-  el.style.setProperty("--sheet-h", detentHeight(name) + "px");
+  document.body.dataset.detent = name;
+  setSheetHeight(detentHeight(name));
   $("grabber").setAttribute("aria-expanded", name !== "peek");
   $("grabber").setAttribute("aria-label", name === "full" ? "Make the list smaller" : "Show more of the list");
   sizeGraph();
 }
 function cycleDetent(){ setDetent(DETENTS[(DETENTS.indexOf(detent) + 1) % DETENTS.length]); }
+/* The sheet's height is shared with the whole page, so the ask field above it can follow it. */
+function setSheetHeight(px){
+  $("sidebar").style.setProperty("--sheet-h", px + "px");
+  document.documentElement.style.setProperty("--sheet-h", px + "px");
+}
 (function(){
   const el = $("sidebar");
   const TOP = ".grabber, .side-head, #panel .side-top, .phead";
@@ -701,19 +710,21 @@ function cycleDetent(){ setDetent(DETENTS[(DETENTS.indexOf(detent) + 1) % DETENT
       if(Math.abs(dy) < 6) return;       // still a tap
       drag.moved = true;
       el.classList.add("dragging");
+      document.body.classList.add("sheet-dragging");
       try{ el.setPointerCapture(e.pointerId); }catch(err){}
     }
     /* speed in pixels a millisecond, upwards positive, for telling a flick */
     if(e.timeStamp > drag.t) drag.v = (drag.y - e.clientY) / (e.timeStamp - drag.t);
     drag.y = e.clientY; drag.t = e.timeStamp;
     const h = Math.max(detentHeight("peek"), Math.min(detentHeight("full"), drag.h0 + dy));
-    el.style.setProperty("--sheet-h", h + "px");
+    setSheetHeight(h);
   });
   function drop(e){
     if(!drag || e.pointerId !== drag.id) return;
     const d = drag; drag = null;
     if(!d.moved) return;
     el.classList.remove("dragging");
+    document.body.classList.remove("sheet-dragging");
     /* a drag that began on a row must not also count as a tap on it */
     swallow = true; setTimeout(()=>{ swallow = false; }, 400);
     /* a flick goes to the next height that way; otherwise to the nearest */
@@ -771,14 +782,14 @@ let dragging = false;
 /* The graph's canvas is the whole window, but the graph itself keeps to the
    part the glass doesn't cover. On a wide window that is beside the sidebar,
    below the toolbar and above the ask field. On a narrow one it is below the
-   toolbar and the ask field and above the sheet; when the sheet is at full
+   toolbar and above the ask field and the sheet; when the sheet is at full
    height the graph is left where it was at half. */
 let region = {x0:0, x1:W, y0:0, y1:H};
 function freeRegion(){
   const left = parseFloat(getComputedStyle(document.body).getPropertyValue("--inset-l")) || 20;
   const r = isWide()
     ? {x0:left, x1:W - 20, y0:104, y1:H - 92}
-    : {x0:left, x1:W - left, y0:118, y1:H - detentHeight(detent === "full" ? "half" : detent) - 24};
+    : {x0:left, x1:W - left, y0:70, y1:H - detentHeight(detent === "full" ? "half" : detent) - 24 - 64};
   /* too little left over to be worth it: use everything */
   return (r.x1 - r.x0 < 240 || r.y1 - r.y0 < 200) ? {x0:0, x1:W, y0:0, y1:H} : r;
 }

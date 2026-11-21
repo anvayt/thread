@@ -47,7 +47,7 @@ struct ThreadApp: App {
 /// The app's tabs, in order. The simulated glasses' `tab N` command uses the
 /// raw values.
 enum AppTab: Int, Hashable {
-    case meet, people, glasses, search
+    case meet, people, map, glasses, search
 }
 
 struct RootView: View {
@@ -71,6 +71,9 @@ struct RootView: View {
             }
             Tab("People", systemImage: "person.2", value: AppTab.people) {
                 PeopleView()
+            }
+            Tab("Map", systemImage: "point.3.connected.trianglepath.dotted", value: AppTab.map) {
+                MapView()
             }
             Tab("Glasses", systemImage: "eyeglasses", value: AppTab.glasses) {
                 GlassesView()
