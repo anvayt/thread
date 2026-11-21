@@ -443,7 +443,10 @@ final class MeetEngine: ObservableObject {
             lines: lines,
             name: hit.name
         )
-        speech?.speak(lines.first ?? headline)
+        // The backend's line names them ("Krishna from NASA, ..."); a card's
+        // first line alone ("machine learning interns discussed") doesn't.
+        let said = hit.spoken.trimmingCharacters(in: .whitespacesAndNewlines)
+        speech?.speak(said.isEmpty ? [hit.name, lines.first ?? ""].filter { !$0.isEmpty }.joined(separator: ". ") : said)
     }
 
     private func handleMatch(
