@@ -9,6 +9,17 @@ import json
 from .store import Person
 
 
+def proper_name(name: str) -> str:
+    """A name as it should be saved. Speech recognition often writes a name
+    it doesn't know without capitals ("krishna"); those get a capital on each
+    word. A name that already has one is left alone, so "DeShawn" and
+    "van der Berg" stay as they were heard."""
+    name = " ".join((name or "").split())
+    if not name or any(c.isupper() for c in name):
+        return name
+    return " ".join(w[:1].upper() + w[1:] for w in name.split(" "))
+
+
 def same_person(a: str, b: str) -> bool:
     """Whether two spoken names refer to the same person.
 

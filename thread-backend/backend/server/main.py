@@ -24,6 +24,7 @@ from .logic import (
     card_fingerprint,
     cosine,
     find_by_name,
+    proper_name,
     resolve_names,
     same_person,
     store_card,
@@ -573,7 +574,7 @@ def ingest(body: IngestIn):
         if wearer
         else llm.extract_contact(body.transcript)
     )
-    heard = info.name.strip()
+    heard = proper_name(info.name)
     if wearer and heard and same_person(heard, wearer):
         # The model took the wearer's own introduction for the contact's.
         heard = ""

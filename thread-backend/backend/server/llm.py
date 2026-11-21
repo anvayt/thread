@@ -392,10 +392,11 @@ def draft_followup(
     return _ask(
         FollowUp,
         "Write the short follow-up message the wearer sends this person after meeting "
-        "them at a career fair or conference, the kind sent on LinkedIn. Write as the "
+        "them in person, the kind sent on LinkedIn. Write as the "
         "wearer, in the first person, to the person by their first name. Use only what "
         "is given: never add a fact, a date, a link, a job or a promise that is not "
-        "there. Keep what the wearer promised and what the person promised the right "
+        "there, and never say where or at what kind of event they met unless that is "
+        "given. Keep what the wearer promised and what the person promised the right "
         "way round. If almost nothing is given, write a brief, plain note saying it "
         "was good to meet them, and nothing more. Under 80 words, plain text, no "
         "subject line, no Markdown, and no placeholders in brackets. Sign off with the "

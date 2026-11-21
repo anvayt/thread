@@ -303,6 +303,19 @@ def test_ingest_files_a_conversation_under_the_person_who_introduced_themselves(
     assert api("timeline")["events"][0]["text"] == "Dana Okafor - robotics, hiring"
 
 
+def test_ingest_gives_a_name_heard_without_capitals_its_capitals(api, fake):
+    fake.contact = llm.ContactInfo(
+        name="krishna  iyer", org="", interests=[], followups=[], topics=[]
+    )
+    assert api("ingest", {"transcript": "hi im krishna iyer"})["saved"] == "Krishna Iyer"
+
+    # one that came with capitals is kept as it was heard
+    fake.contact = llm.ContactInfo(
+        name="DeShawn van der Berg", org="", interests=[], followups=[], topics=[]
+    )
+    assert api("ingest", {"transcript": "I'm DeShawn."})["saved"] == "DeShawn van der Berg"
+
+
 def test_ingest_never_files_the_wearer_as_the_contact(api, fake):
     fake.contact = llm.ContactInfo(
         name="Sam Rivera", org="", interests=[], followups=[], topics=["design"],
