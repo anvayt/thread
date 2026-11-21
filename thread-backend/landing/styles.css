@@ -1,0 +1,217 @@
+/* Thread's landing page.
+
+   It is set the way Apple sets a product page: the system font, one idea per
+   section, and the product itself as the pictures. The phone screens are the
+   app's own Meet screen redrawn in HTML, and the map is drawn the way the
+   dashboard draws it. The only branding is the name, set in the system font,
+   and the app icon as the favicon (see ../assets/BRAND.md).
+
+   No fonts are loaded and there is no script. */
+
+:root{
+  --bg:#FFFFFF; --alt:#F5F5F7;
+  --ink:#1D1D1F; --ink-2:#424245; --muted:#6E6E73;
+  --line:rgba(0,0,0,.12);
+  --nav:rgba(255,255,255,.72);
+
+  /* glass: a tint, the light its edge catches, and the shadow it casts */
+  --glass:rgba(255,255,255,.55);
+  --rim-a:rgba(255,255,255,1); --rim-b:rgba(255,255,255,.3); --rim-c:rgba(255,255,255,.75);
+  --glass-shadow:0 0 0 .5px rgba(0,0,0,.07), 0 18px 50px rgba(24,32,60,.14), 0 1px 3px rgba(24,32,60,.07);
+  --wash-a:rgba(10,132,255,.2); --wash-b:rgba(90,200,250,.24); --wash-c:rgba(255,149,0,.12);
+
+  /* the phone screens use iOS's own colours, because they are the app */
+  --p-bezel:#1D1D1F; --p-edge:rgba(255,255,255,.16);
+  --p-bg:#F2F2F7; --p-cell:#FFFFFF; --p-ink:#000000; --p-muted:#6C6C70; --p-line:rgba(60,60,67,.16);
+  --p-blue:#007AFF; --p-red:#FF3B30; --p-green:#34C759; --p-track:rgba(120,120,128,.2);
+
+  /* the map */
+  --topic:#34C759; --dot:rgba(60,60,67,.17); --tag:#FFFFFF; --link:#C7C7CC;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#000000; --alt:#161617;
+    --ink:#F5F5F7; --ink-2:#D2D2D7; --muted:#A1A1A6;
+    --line:rgba(255,255,255,.16);
+    --nav:rgba(0,0,0,.7);
+
+    --glass:rgba(80,80,90,.34);
+    --rim-a:rgba(255,255,255,.34); --rim-b:rgba(255,255,255,.05); --rim-c:rgba(255,255,255,.16);
+    --glass-shadow:0 18px 50px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+    --wash-a:rgba(10,132,255,.3); --wash-b:rgba(64,200,224,.18); --wash-c:rgba(255,159,10,.08);
+
+    --p-bezel:#2C2C2E; --p-edge:rgba(255,255,255,.22);
+    --p-bg:#000000; --p-cell:#1C1C1E; --p-ink:#FFFFFF; --p-muted:#98989F; --p-line:rgba(84,84,88,.6);
+    --p-blue:#0A84FF; --p-red:#FF453A; --p-green:#30D158; --p-track:rgba(120,120,128,.32);
+
+    --topic:#30D158; --dot:rgba(235,235,245,.12); --tag:#1C1C1E; --link:#48484A;
+  }
+}
+
+/* ------------------------------------------------------------------ base */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body,h1,h2,h3,p,figure,blockquote,ol,ul,dl,dd{margin:0}
+ol,ul{padding:0; list-style:none}
+/* No letter-spacing anywhere: the system font sets its own tracking. */
+body{
+  background:var(--bg); color:var(--ink);
+  font:17px/1.47 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1028px; margin:0 auto; padding-inline:24px}
+:focus-visible{outline:3px solid rgba(0,113,227,.6); outline-offset:3px; border-radius:6px}
+
+h1,h2,h3{font-weight:600; text-wrap:balance}
+h1{font-size:clamp(40px,6.6vw,80px); line-height:1.05; font-weight:700}
+h2{font-size:clamp(32px,4.6vw,56px); line-height:1.07}
+h3{font-size:21px; line-height:1.2}
+.lede{font-size:clamp(19px,2.1vw,24px); line-height:1.38; color:var(--ink-2); text-wrap:pretty}
+
+section{padding-block:clamp(72px,10vw,140px); scroll-margin-top:48px; --panel:var(--alt)}
+section.alt{background:var(--alt); --panel:var(--bg)}
+/* a section opens with a centred heading and, under it, one sentence */
+section h2, section h2 + .lede{text-align:center; margin-inline:auto}
+section h2{max-width:17em}
+section h2 + .lede{max-width:34em; margin-top:18px}
+
+/* ----------------------------------------------------------------- glass */
+.glass{position:relative; background:var(--glass); box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:blur(24px) saturate(190%); backdrop-filter:blur(24px) saturate(190%)}
+/* the edge catches light: bright at the top left, again at the bottom right */
+.glass::after{content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
+  background:linear-gradient(135deg, var(--rim-a), var(--rim-b) 38%, var(--rim-b) 62%, var(--rim-c));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude}
+
+/* ------------------------------------------------------------------- nav */
+.nav{position:sticky; top:0; z-index:10; background:var(--nav); border-bottom:1px solid var(--line);
+  -webkit-backdrop-filter:saturate(180%) blur(20px); backdrop-filter:saturate(180%) blur(20px)}
+.nav .wrap{display:flex; align-items:center; justify-content:space-between; gap:16px; height:48px}
+/* the product's name, the way Apple shows one in a top bar */
+.brand{color:var(--ink); text-decoration:none; font-size:21px; line-height:1.15; font-weight:600}
+.nav nav{display:flex; gap:clamp(14px,3vw,28px); font-size:13px}
+.nav nav a{color:var(--ink-2); text-decoration:none}
+.nav nav a:hover{color:var(--ink)}
+
+/* ------------------------------------------------------------------ hero */
+.hero{position:relative; overflow:hidden; text-align:center;
+  padding-block:clamp(72px,11vw,150px) clamp(64px,9vw,120px)}
+/* a soft wash behind everything, so the glass has something to sit on */
+.hero::before{content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(70% 60% at 12% 100%, var(--wash-a), transparent 70%),
+    radial-gradient(60% 55% at 88% 96%, var(--wash-b), transparent 70%),
+    radial-gradient(40% 40% at 60% 108%, var(--wash-c), transparent 70%)}
+.hero .wrap{position:relative}
+.hero h1{max-width:13.5em; margin-inline:auto}
+/* each sentence starts its own line, in the headlines and in what is spoken */
+.hero h1 span, .said blockquote span, .who h2 span{display:block}
+.hero .lede{max-width:31em; margin:24px auto 0}
+
+/* what you hear, as the page's first picture */
+.said{max-width:760px; margin:clamp(44px,6vw,76px) auto 0}
+.said-card{border-radius:34px; padding:26px clamp(24px,4vw,40px) 34px; text-align:left}
+.said-label{display:flex; align-items:center; gap:10px; font-size:15px; color:var(--muted)}
+.said-label svg{color:var(--p-blue); flex:none}
+.said blockquote{margin-top:12px; font-size:clamp(25px,3.7vw,42px); line-height:1.16; font-weight:600; text-wrap:balance}
+figcaption{margin-top:18px; font-size:14px; line-height:1.43; color:var(--muted); text-align:center; text-wrap:pretty}
+
+/* ----------------------------------------------------------------- steps */
+.steps{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(20px,4vw,56px);
+  margin-top:clamp(48px,7vw,88px); counter-reset:step}
+.steps li{counter-increment:step}
+.steps h3{margin-top:26px}
+/* the steps are a real sequence, so they are numbered */
+.steps h3::before{content:counter(step) "."; margin-right:.35em; color:var(--muted)}
+.steps p{margin-top:8px; color:var(--ink-2)}
+
+/* A phone, cut off below the fold of its own screen. Everything inside is
+   the app's Meet screen at about three-quarters size. */
+.phone{max-width:300px; margin-inline:auto; aspect-ratio:300/560; padding:9px 9px 0;
+  border-radius:50px 50px 0 0; background:var(--p-bezel); box-shadow:inset 0 0 0 1.5px var(--p-edge);
+  -webkit-mask-image:linear-gradient(#000 86%, transparent); mask-image:linear-gradient(#000 86%, transparent)}
+.screen{height:100%; overflow:hidden; border-radius:41px 41px 0 0; background:var(--p-bg); color:var(--p-ink);
+  font-size:13px; line-height:1.3; text-align:left}
+.island{width:86px; height:25px; margin:10px auto 0; border-radius:13px; background:#000}
+.p-title{padding:16px 18px 8px; font-size:25px; line-height:1.1; font-weight:700}
+.p-btn{display:flex; align-items:center; justify-content:center; gap:7px; height:42px; margin:0 14px;
+  border-radius:21px; background:var(--p-blue); color:#fff; font-size:15px; font-weight:600}
+.p-btn.stop{background:var(--p-red)}
+.p-foot{padding:7px 30px 0; font-size:10.5px; color:var(--p-muted)}
+.p-head{padding:14px 30px 6px; font-size:12px; font-weight:600; color:var(--p-muted)}
+.p-group{margin:0 14px; padding:0 14px; border-radius:20px; background:var(--p-cell)}
+.p-row{padding:10px 0; border-top:1px solid var(--p-line)}
+.p-row:first-child{border-top:none}
+.p-split{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.p-tail{font-size:12px; color:var(--p-muted); font-variant-numeric:tabular-nums; white-space:nowrap}
+.p-person{display:flex; align-items:center; gap:10px}
+.p-av{width:32px; height:32px; border-radius:50%; flex:none; display:grid; place-items:center;
+  background:linear-gradient(#A1A6B0,#7B7F88); color:#fff;
+  font:500 13px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+.p-who{flex:1; min-width:0; display:flex; flex-direction:column}
+.p-who b{font-weight:600}
+.p-who span{font-size:12px; color:var(--p-muted)}
+.p-level{display:block; height:4px; margin:3px 0; border-radius:2px; background:var(--p-track)}
+.p-level span{display:block; width:62%; height:100%; border-radius:2px; background:var(--p-blue)}
+.p-switch{width:36px; height:21px; border-radius:11px; background:var(--p-track); flex:none; position:relative}
+.p-switch::after{content:""; position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:50%;
+  background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.p-switch.on{background:var(--p-green)}
+.p-switch.on::after{left:17px}
+
+/* ------------------------------------------------------------------ uses */
+.uses{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0 clamp(24px,4vw,48px);
+  margin-top:clamp(40px,6vw,72px)}
+.uses > div{border-top:1px solid var(--line); padding:22px 0 34px}
+.uses dt{font-size:21px; line-height:1.2; font-weight:600}
+.uses dd{margin-top:8px; color:var(--ink-2)}
+
+/* ------------------------------------------------------------------- map */
+.map{margin-top:clamp(40px,6vw,72px)}
+.map-panel{overflow-x:auto; border-radius:28px;
+  background:radial-gradient(circle, var(--dot) 1px, transparent 1.5px) 0 0/24px 24px, var(--panel)}
+.map svg{display:block; width:100%; min-width:600px; height:auto}
+.m-links path{fill:none; stroke:var(--link); stroke-width:1.2; stroke-linecap:round}
+/* a person: a monogram in a white ring, lifted off the canvas */
+.m-person circle{fill:url(#monogram); stroke:#fff; stroke-width:2.5; filter:drop-shadow(0 3px 7px rgba(0,0,0,.22))}
+.m-ini{fill:#fff; text-anchor:middle; font:500 20px ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+.m-name{fill:var(--ink); text-anchor:middle; font-size:12.5px; font-weight:600;
+  paint-order:stroke; stroke:var(--panel); stroke-width:3px; stroke-linejoin:round}
+.m-badge{fill:var(--tag); stroke:var(--line); stroke-width:1}
+.m-count{fill:var(--muted); text-anchor:middle; font-size:10px; font-weight:600}
+/* a tag: a capsule with a dot and a name */
+.m-tag rect{fill:var(--tag); stroke:var(--line); stroke-width:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}
+.m-tag circle{fill:var(--topic)}
+.m-tag text{fill:var(--ink-2); font-size:12px}
+
+/* ----------------------------------------------------------------- trust */
+/* an inset grouped list, as in Settings */
+.rows{max-width:760px; margin:clamp(40px,6vw,72px) auto 0; padding:6px clamp(22px,4vw,34px);
+  border-radius:28px; background:var(--panel)}
+.rows li{padding:22px 0 24px; border-top:1px solid var(--line)}
+.rows li:first-child{border-top:none}
+.rows p{margin-top:6px; color:var(--ink-2)}
+
+/* ------------------------------------------------------------------- who */
+.who{text-align:center}
+.who p{max-width:36em; margin:22px auto 0; color:var(--ink-2); text-wrap:pretty}
+.who h2 + p{margin-top:28px}
+
+/* ----------------------------------------------------------------- small */
+@media (max-width:820px){
+  .steps{grid-template-columns:1fr; gap:56px}
+  .steps li{max-width:420px; margin-inline:auto}
+  .uses{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  .uses{grid-template-columns:1fr}
+  .nav nav a:first-child{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  html{scroll-behavior:smooth}
+}
+/* "Reduce transparency" swaps the glass for a solid surface. */
+@media (prefers-reduced-transparency:reduce){
+  .glass, .nav{background:var(--bg); -webkit-backdrop-filter:none; backdrop-filter:none}
+}

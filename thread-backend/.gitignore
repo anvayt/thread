@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local data and secrets: the people database, API keys, your own test photos
+backend/data/
+.env
+.env.local
+backend/testdata/local/
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

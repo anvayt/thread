@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thread: remember everyone you meet</title>
+<meta name="description" content="An iPhone app for Meta glasses. It remembers the people you meet, and when you see them again it tells you who they are and what was left open.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20132%20132%22%20width=%22132%22%20height=%22132%22%20role=%22img%22%20aria-label=%22thread%20app%20icon%22%3E%3Ctitle%3Ethread%20app%20icon%3C/title%3E%3C%21--%20one%20strand,%20centreline%20M24%2091C50%2091%2083%2077%2083%2055C83%2045.6%2075.4%2038%2066%2038C56.6%2038%2049%2045.6%2049%2055C49%2077%2082%2091%20108%2091,%20stroke%2012%20with%20round%20ends,%20outlined%3B%20bead%20r=9%20--%3E%3Cpath%20fill=%22%23191817%22%20d=%22M132%2066L132%20102C132%20118.57%20118.57%20132%20102%20132L30%20132C13.43%20132%200%20118.57%200%20102L0%2030C0%2013.43%2013.43%200%2030%200L102%200C118.57%200%20132%2013.43%20132%2030Z%22/%3E%3Cpath%20fill=%22%23FFFFFF%22%20d=%22M24%2085L25.5%2084.98%2027.02%2084.93%2028.56%2084.85%2030.11%2084.73%2031.68%2084.58%2033.25%2084.4%2034.83%2084.19%2036.42%2083.94%2038.01%2083.66%2039.59%2083.35%2041.18%2083.01%2042.76%2082.64%2044.33%2082.24%2045.89%2081.81%2047.44%2081.35%2048.97%2080.86%2050.48%2080.34%2051.98%2079.8%2053.45%2079.22%2054.9%2078.62%2056.32%2078%2057.71%2077.35%2059.06%2076.68%2060.38%2075.98%2061.67%2075.26%2062.92%2074.52%2064.12%2073.75%2065.28%2072.97%2066.4%2072.17%2067.46%2071.36%2068.48%2070.52%2069.44%2069.68%2070.35%2068.82%2071.2%2067.95%2072%2067.06%2072.74%2066.17%2073.42%2065.28%2074.04%2064.37%2074.6%2063.47%2075.1%2062.55%2075.55%2061.64%2075.93%2060.72%2076.25%2059.79%2076.52%2058.86%2076.73%2057.91%2076.88%2056.96%2076.97%2055.99%2077%2055%2076.99%2054.62%2076.97%2054.24%2076.94%2053.86%2076.9%2053.5%2076.84%2053.13%2076.78%2052.77%2076.7%2052.42%2076.61%2052.07%2076.51%2051.72%2076.39%2051.38%2076.27%2051.04%2076.14%2050.71%2075.99%2050.39%2075.84%2050.07%2075.68%2049.75%2075.5%2049.45%2075.32%2049.14%2075.13%2048.85%2074.92%2048.56%2074.71%2048.28%2074.49%2048%2074.26%2047.73%2074.03%2047.47%2073.78%2047.22%2073.53%2046.97%2073.27%2046.74%2073%2046.51%2072.72%2046.29%2072.44%2046.08%2072.15%2045.87%2071.86%2045.68%2071.55%2045.5%2071.25%2045.32%2070.93%2045.16%2070.61%2045.01%2070.29%2044.86%2069.96%2044.73%2069.62%2044.61%2069.28%2044.49%2068.93%2044.39%2068.58%2044.3%2068.23%2044.22%2067.87%2044.16%2067.5%2044.1%2067.14%2044.06%2066.76%2044.03%2066.38%2044.01%2066%2044%2065.62%2044.01%2065.24%2044.03%2064.86%2044.06%2064.5%2044.1%2064.13%2044.16%2063.77%2044.22%2063.42%2044.3%2063.07%2044.39%2062.72%2044.49%2062.38%2044.61%2062.04%2044.73%2061.71%2044.86%2061.39%2045.01%2061.07%2045.16%2060.75%2045.32%2060.45%2045.5%2060.14%2045.68%2059.85%2045.87%2059.56%2046.08%2059.28%2046.29%2059%2046.51%2058.73%2046.74%2058.47%2046.97%2058.22%2047.22%2057.97%2047.47%2057.74%2047.73%2057.51%2048%2057.29%2048.28%2057.08%2048.56%2056.87%2048.85%2056.68%2049.14%2056.5%2049.45%2056.32%2049.75%2056.16%2050.07%2056.01%2050.39%2055.86%2050.71%2055.73%2051.04%2055.61%2051.38%2055.49%2051.72%2055.39%2052.07%2055.3%2052.42%2055.22%2052.77%2055.16%2053.13%2055.1%2053.5%2055.06%2053.86%2055.03%2054.24%2055.01%2054.62%2055%2055%2055.03%2055.99%2055.12%2056.96%2055.27%2057.91%2055.48%2058.86%2055.75%2059.79%2056.07%2060.72%2056.45%2061.64%2056.9%2062.55%2057.4%2063.47%2057.96%2064.37%2058.58%2065.28%2059.26%2066.17%2060%2067.06%2060.8%2067.95%2061.65%2068.82%2062.56%2069.68%2063.52%2070.52%2064.54%2071.36%2065.6%2072.17%2066.72%2072.97%2067.88%2073.75%2069.08%2074.52%2070.33%2075.26%2071.62%2075.98%2072.94%2076.68%2074.29%2077.35%2075.68%2078%2077.1%2078.62%2078.55%2079.22%2080.02%2079.8%2081.52%2080.34%2083.03%2080.86%2084.56%2081.35%2086.11%2081.81%2087.67%2082.24%2089.24%2082.64%2090.82%2083.01%2092.41%2083.35%2093.99%2083.66%2095.58%2083.94%2097.17%2084.19%2098.75%2084.4%20100.32%2084.58%20101.89%2084.73%20103.44%2084.85%20104.98%2084.93%20106.5%2084.98%20108%2085%20106.83%2085.12%20105.7%2085.46%20104.67%2086.01%20103.76%2086.76%20103.01%2087.67%20102.46%2088.7%20102.12%2089.83%20102%2091%20102.12%2092.17%20102.46%2093.3%20103.01%2094.33%20103.76%2095.24%20104.67%2095.99%20105.7%2096.54%20106.83%2096.88%20108%2097%20106.23%2096.98%20104.46%2096.92%20102.67%2096.82%20100.87%2096.69%2099.06%2096.52%2097.25%2096.31%2095.44%2096.06%2093.62%2095.78%2091.81%2095.46%2090%2095.11%2088.19%2094.72%2086.38%2094.3%2084.59%2093.84%2082.8%2093.34%2081.03%2092.82%2079.27%2092.25%2077.52%2091.66%2075.79%2091.02%2074.08%2090.36%2072.39%2089.66%2070.73%2088.93%2069.08%2088.16%2067.47%2087.36%2065.88%2086.52%2064.33%2085.65%2062.81%2084.74%2061.32%2083.8%2059.87%2082.83%2058.46%2081.81%2057.09%2080.76%2055.76%2079.67%2054.48%2078.55%2053.24%2077.38%2052.06%2076.17%2050.93%2074.93%2049.86%2073.64%2048.86%2072.31%2047.91%2070.93%2047.04%2069.52%2046.23%2068.06%2045.51%2066.55%2044.87%2065.01%2044.31%2063.42%2043.85%2061.8%2043.48%2060.15%2043.22%2058.46%2043.05%2056.74%2043%2055%2043.01%2054.21%2043.05%2053.43%2043.12%2052.66%2043.21%2051.89%2043.33%2051.12%2043.47%2050.37%2043.63%2049.62%2043.82%2048.89%2044.03%2048.16%2044.27%2047.44%2044.53%2046.74%2044.81%2046.04%2045.11%2045.36%2045.43%2044.69%2045.78%2044.03%2046.14%2043.38%2046.52%2042.75%2046.93%2042.13%2047.35%2041.53%2047.79%2040.94%2048.25%2040.36%2048.73%2039.8%2049.22%2039.26%2049.73%2038.73%2050.26%2038.22%2050.8%2037.73%2051.36%2037.25%2051.94%2036.79%2052.53%2036.35%2053.13%2035.93%2053.75%2035.52%2054.38%2035.14%2055.03%2034.78%2055.69%2034.43%2056.36%2034.11%2057.04%2033.81%2057.74%2033.53%2058.44%2033.27%2059.16%2033.03%2059.89%2032.82%2060.62%2032.63%2061.37%2032.47%2062.12%2032.33%2062.89%2032.21%2063.66%2032.12%2064.43%2032.05%2065.21%2032.01%2066%2032%2066.79%2032.01%2067.57%2032.05%2068.34%2032.12%2069.11%2032.21%2069.88%2032.33%2070.63%2032.47%2071.38%2032.63%2072.11%2032.82%2072.84%2033.03%2073.56%2033.27%2074.26%2033.53%2074.96%2033.81%2075.64%2034.11%2076.31%2034.43%2076.97%2034.78%2077.62%2035.14%2078.25%2035.52%2078.87%2035.93%2079.47%2036.35%2080.06%2036.79%2080.64%2037.25%2081.2%2037.73%2081.74%2038.22%2082.27%2038.73%2082.78%2039.26%2083.27%2039.8%2083.75%2040.36%2084.21%2040.94%2084.65%2041.53%2085.07%2042.13%2085.48%2042.75%2085.86%2043.38%2086.22%2044.03%2086.57%2044.69%2086.89%2045.36%2087.19%2046.04%2087.47%2046.74%2087.73%2047.44%2087.97%2048.16%2088.18%2048.89%2088.37%2049.62%2088.53%2050.37%2088.67%2051.12%2088.79%2051.89%2088.88%2052.66%2088.95%2053.43%2088.99%2054.21%2089%2055%2088.95%2056.74%2088.78%2058.46%2088.52%2060.15%2088.15%2061.8%2087.69%2063.42%2087.13%2065.01%2086.49%2066.55%2085.77%2068.06%2084.96%2069.52%2084.09%2070.93%2083.14%2072.31%2082.14%2073.64%2081.07%2074.93%2079.94%2076.17%2078.76%2077.38%2077.52%2078.55%2076.24%2079.67%2074.91%2080.76%2073.54%2081.81%2072.13%2082.83%2070.68%2083.8%2069.19%2084.74%2067.67%2085.65%2066.12%2086.52%2064.53%2087.36%2062.92%2088.16%2061.27%2088.93%2059.61%2089.66%2057.92%2090.36%2056.21%2091.02%2054.48%2091.66%2052.73%2092.25%2050.97%2092.82%2049.2%2093.34%2047.41%2093.84%2045.62%2094.3%2043.81%2094.72%2042%2095.11%2040.19%2095.46%2038.38%2095.78%2036.56%2096.06%2034.75%2096.31%2032.94%2096.52%2031.13%2096.69%2029.33%2096.82%2027.54%2096.92%2025.77%2096.98%2024%2097%2022.83%2096.88%2021.7%2096.54%2020.67%2095.99%2019.76%2095.24%2019.01%2094.33%2018.46%2093.3%2018.12%2092.17%2018%2091%2018.12%2089.83%2018.46%2088.7%2019.01%2087.67%2019.76%2086.76%2020.67%2086.01%2021.7%2085.46%2022.83%2085.12Z%22/%3E%3Cpath%20fill=%22%237F77DD%22%20d=%22M117%2091C117%2095.97%20112.97%20100%20108%20100C103.03%20100%2099%2095.97%2099%2091C99%2086.03%20103.03%2082%20108%2082C112.97%2082%20117%2086.03%20117%2091Z%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Thread, back to the top">Thread</a>
+    <nav aria-label="On this page">
+      <a href="#how">How it works</a>
+      <a href="#memory">The memory</a>
+      <a href="#trust">Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <h1><span>You already know them.</span> <span>Thread knows what you left open.</span></h1>
+      <p class="lede">An iPhone app for Meta glasses. It remembers the people you meet, and when you see them again it tells you who they are and what was left open.</p>
+
+      <figure class="said">
+        <div class="said-card glass">
+          <p class="said-label">
+            <svg viewBox="0 0 20 16" width="20" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 6.5v3M6 3.5v9M10 1v14M14 4.5v7M18 6.5v3"/></svg>
+            In your ear
+          </p>
+          <blockquote><span>Sarah Chen, VP Product at Acme.</span> <span>The Series B pricing question is still open.</span></blockquote>
+        </div>
+        <figcaption>What Thread says when you look up and can't place the face in front of you.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="how" class="alt">
+    <div class="wrap">
+      <h2>One tap. The rest is remembered.</h2>
+      <p class="lede">No notes to take, and nothing to scroll while someone is talking to you.</p>
+
+      <ol class="steps">
+        <li>
+          <div class="phone" role="img" aria-label="The Meet screen of the Thread app while it listens. The button says Done, and the words being said appear underneath.">
+            <div class="screen" aria-hidden="true">
+              <div class="island"></div>
+              <p class="p-title">Meet</p>
+              <div class="p-btn stop">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="2.2"/></svg>
+                Done
+              </div>
+              <p class="p-foot">Listening. Let them introduce themselves.</p>
+              <p class="p-head">Listening</p>
+              <div class="p-group">
+                <div class="p-row">Hi, I'm Sarah Chen. I run product at Acme. We still haven't settled pricing for the Series B</div>
+                <div class="p-row p-split"><span>They're still talking</span><span class="p-tail">6 s</span></div>
+                <div class="p-row"><span class="p-level"><span></span></span></div>
+              </div>
+              <p class="p-head">Options</p>
+              <div class="p-group">
+                <div class="p-row p-split"><span>Keep going</span><span class="p-switch"></span></div>
+                <div class="p-row p-split"><span>Speak the card</span><span class="p-switch on"></span></div>
+              </div>
+            </div>
+          </div>
+          <h3>Tap once</h3>
+          <p>Tap Meet. Thread takes one photo through the glasses and listens while they introduce themselves. It stops when they stop talking.</p>
+        </li>
+
+        <li>
+          <div class="phone" role="img" aria-label="The Meet screen after a first meeting. Sarah Chen, VP Product at Acme, is marked New, with what was talked about and what was promised.">
+            <div class="screen" aria-hidden="true">
+              <div class="island"></div>
+              <p class="p-title">Meet</p>
+              <div class="p-btn">
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="4.6" r="3"/><path d="M2.4 14.2c0-3.1 2.5-5 5.6-5s5.6 1.9 5.6 5z"/></svg>
+                Meet
+              </div>
+              <p class="p-foot">Takes a photo and listens until they stop talking.</p>
+              <p class="p-head">Latest</p>
+              <div class="p-group">
+                <div class="p-row p-person"><span class="p-av">SC</span><span class="p-who"><b>Sarah Chen</b><span>VP Product, Acme</span></span><span class="p-tail">New</span></div>
+                <div class="p-row">New face, added as Sarah Chen</div>
+              </div>
+              <p class="p-head">Say next</p>
+              <div class="p-group">
+                <div class="p-row">Talked about Series B pricing.</div>
+                <div class="p-row">Works at Acme.</div>
+              </div>
+              <p class="p-head">You owe them</p>
+              <div class="p-group">
+                <div class="p-row">Send the pricing deck.</div>
+              </div>
+            </div>
+          </div>
+          <h3>It files what they said</h3>
+          <p>Their name, where they work, what you talked about and what you promised, saved with their face.</p>
+        </li>
+
+        <li>
+          <div class="phone" role="img" aria-label="The Meet screen at a second meeting. Sarah Chen is marked Known, with what to say next: the Series B pricing question is still open.">
+            <div class="screen" aria-hidden="true">
+              <div class="island"></div>
+              <p class="p-title">Meet</p>
+              <div class="p-btn">
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><circle cx="8" cy="4.6" r="3"/><path d="M2.4 14.2c0-3.1 2.5-5 5.6-5s5.6 1.9 5.6 5z"/></svg>
+                Meet
+              </div>
+              <p class="p-foot">Takes a photo and listens until they stop talking.</p>
+              <p class="p-head">Latest</p>
+              <div class="p-group">
+                <div class="p-row p-person"><span class="p-av">SC</span><span class="p-who"><b>Sarah Chen</b><span>VP Product, Acme</span></span><span class="p-tail">Known</span></div>
+                <div class="p-row">Sarah Chen, VP Product at Acme</div>
+              </div>
+              <p class="p-head">Say next</p>
+              <div class="p-group">
+                <div class="p-row">The Series B pricing question is still open.</div>
+                <div class="p-row">You owe them the pricing deck.</div>
+                <div class="p-row">Ask how the board meeting went.</div>
+              </div>
+            </div>
+          </div>
+          <h3>Next time, one line</h3>
+          <p>When that face is in front of you again, Thread tells you who they are and what was left open. On the phone, and spoken in your ear.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Where forgetting costs you something.</h2>
+      <p class="lede">Anywhere the relationship matters more than the meeting.</p>
+
+      <dl class="uses">
+        <div>
+          <dt>Raising a round</dt>
+          <dd>Forty investor meetings in a quarter. Know which partner pushed on churn, who asked for the deck twice, and who you still owe an answer.</dd>
+        </div>
+        <div>
+          <dt>Client meetings</dt>
+          <dd>Walk into the review already knowing what they raised last quarter and what you promised to do about it.</dd>
+        </div>
+        <div>
+          <dt>Networking events</dt>
+          <dd>A dozen introductions an hour. Keep every name, and the reason each one was worth having.</dd>
+        </div>
+        <div>
+          <dt>Renegotiations</dt>
+          <dd>The last conversation set the terms. See what was agreed and what was left open before you sit down.</dd>
+        </div>
+        <div>
+          <dt>Recruiting and interviews</dt>
+          <dd>Fifty candidates in a week. Greet each one by name, and pick up where the last conversation stopped.</dd>
+        </div>
+        <div>
+          <dt>Conferences and reunions</dt>
+          <dd>The people you see once a year, whose names arrive four seconds too late. Thread gets there first.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="memory" class="alt">
+    <div class="wrap">
+      <h2>It gets better every time you meet someone.</h2>
+      <p class="lede">Thread keeps a map of the people you have met and what you talked about. Every conversation adds to it, so the second time you meet someone it already knows about the first.</p>
+
+      <figure class="map">
+        <div class="map-panel">
+          <svg viewBox="0 0 760 290" role="img"
+               aria-label="A map of three people and what they talked about. Priya Raman and Sarah Chen both connect to Series B pricing. Sarah Chen and Dan Okoye both connect to Payments.">
+            <defs>
+              <linearGradient id="monogram" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#A1A6B0"/><stop offset="1" stop-color="#7B7F88"/>
+              </linearGradient>
+            </defs>
+            <g class="m-links"><path d="M140,108Q184.8,181.2 258,226"/><path d="M380,132Q307.7,164.4 258,226"/><path d="M380,132Q453.6,107.4 508,52"/><path d="M628,112Q575.2,67.6 508,52"/><path d="M380,132Q421.0,194.7 486,232"/><path d="M140,108Q97.8,160.3 84,226"/><path d="M628,112Q638.3,174.8 676,226"/></g>
+            <g class="m-tag" transform="translate(258,226)"><rect x="-65" y="-13" width="130" height="26" rx="13"/><circle cx="-50" r="4"/><text x="-39" y="4.2">Series B pricing</text></g>
+            <g class="m-tag" transform="translate(508,52)"><rect x="-48" y="-13" width="96" height="26" rx="13"/><circle cx="-33" r="4"/><text x="-22" y="4.2">Payments</text></g>
+            <g class="m-tag" transform="translate(486,232)"><rect x="-48" y="-13" width="96" height="26" rx="13"/><circle cx="-33" r="4"/><text x="-22" y="4.2">Infra intro</text></g>
+            <g class="m-tag" transform="translate(84,226)"><rect x="-37" y="-13" width="74" height="26" rx="13"/><circle cx="-22" r="4"/><text x="-11" y="4.2">Hiring</text></g>
+            <g class="m-tag" transform="translate(676,226)"><rect x="-45" y="-13" width="90" height="26" rx="13"/><circle cx="-30" r="4"/><text x="-19" y="4.2">API docs</text></g>
+            <g class="m-person" transform="translate(140,108)"><circle r="26"/><text class="m-ini" y="6.5">PR</text><text class="m-name" y="44">Priya Raman</text><rect class="m-badge" x="11" y="11" width="16" height="16" rx="8"/><text class="m-count" x="19" y="22.6">1</text></g>
+            <g class="m-person" transform="translate(380,132)"><circle r="26"/><text class="m-ini" y="6.5">SC</text><text class="m-name" y="44">Sarah Chen</text><rect class="m-badge" x="11" y="11" width="16" height="16" rx="8"/><text class="m-count" x="19" y="22.6">3</text></g>
+            <g class="m-person" transform="translate(628,112)"><circle r="26"/><text class="m-ini" y="6.5">DO</text><text class="m-name" y="44">Dan Okoye</text><rect class="m-badge" x="11" y="11" width="16" height="16" rx="8"/><text class="m-count" x="19" y="22.6">2</text></g>
+          </svg>
+        </div>
+        <figcaption>People who talked about the same thing meet at the same tag. The number is how many times you have met.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="trust">
+    <div class="wrap">
+      <h2>A memory you can trust in the room.</h2>
+
+      <ul class="rows">
+        <li>
+          <h3>It never guesses a name</h3>
+          <p>If Thread isn't sure who someone is, it adds them as a new contact instead of guessing. If there is no face in the photo, it says so.</p>
+        </li>
+        <li>
+          <h3>It never guesses pronouns</h3>
+          <p>Thread uses a person's name, or they. It never assumes anything from a face.</p>
+        </li>
+        <li>
+          <h3>Nobody is added in secret</h3>
+          <p>A new face is saved only during a capture you started. It appears in your list straight away, ready to be named or forgotten.</p>
+        </li>
+        <li>
+          <h3>It runs on your computer</h3>
+          <p>Faces are matched on a backend you run yourself. No photo goes to an outside face service. Only the text of what was said goes to a language model, to pull out names and follow-ups.</p>
+        </li>
+        <li>
+          <h3>Forget means forget</h3>
+          <p>Forgetting someone deletes their face, their notes and every meeting.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="alt who">
+    <div class="wrap">
+      <h2><span>For everyone in the room.</span> <span>And for people this happens to every day.</span></h2>
+      <p>At a conference you meet a dozen people in an hour and forget most of them by the evening. Thread gives you those names back.</p>
+      <p>For people living with face-blindness, hearing loss or early memory loss, that isn't an occasional embarrassment. It is every introduction, every day. Same product, much higher stakes.</p>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

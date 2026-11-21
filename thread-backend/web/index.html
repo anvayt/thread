@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Thread</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20132%20132%22%20width=%22132%22%20height=%22132%22%20role=%22img%22%20aria-label=%22thread%20app%20icon%22%3E%3Ctitle%3Ethread%20app%20icon%3C/title%3E%3C%21--%20one%20strand,%20centreline%20M24%2091C50%2091%2083%2077%2083%2055C83%2045.6%2075.4%2038%2066%2038C56.6%2038%2049%2045.6%2049%2055C49%2077%2082%2091%20108%2091,%20stroke%2012%20with%20round%20ends,%20outlined%3B%20bead%20r=9%20--%3E%3Cpath%20fill=%22%23191817%22%20d=%22M132%2066L132%20102C132%20118.57%20118.57%20132%20102%20132L30%20132C13.43%20132%200%20118.57%200%20102L0%2030C0%2013.43%2013.43%200%2030%200L102%200C118.57%200%20132%2013.43%20132%2030Z%22/%3E%3Cpath%20fill=%22%23FFFFFF%22%20d=%22M24%2085L25.5%2084.98%2027.02%2084.93%2028.56%2084.85%2030.11%2084.73%2031.68%2084.58%2033.25%2084.4%2034.83%2084.19%2036.42%2083.94%2038.01%2083.66%2039.59%2083.35%2041.18%2083.01%2042.76%2082.64%2044.33%2082.24%2045.89%2081.81%2047.44%2081.35%2048.97%2080.86%2050.48%2080.34%2051.98%2079.8%2053.45%2079.22%2054.9%2078.62%2056.32%2078%2057.71%2077.35%2059.06%2076.68%2060.38%2075.98%2061.67%2075.26%2062.92%2074.52%2064.12%2073.75%2065.28%2072.97%2066.4%2072.17%2067.46%2071.36%2068.48%2070.52%2069.44%2069.68%2070.35%2068.82%2071.2%2067.95%2072%2067.06%2072.74%2066.17%2073.42%2065.28%2074.04%2064.37%2074.6%2063.47%2075.1%2062.55%2075.55%2061.64%2075.93%2060.72%2076.25%2059.79%2076.52%2058.86%2076.73%2057.91%2076.88%2056.96%2076.97%2055.99%2077%2055%2076.99%2054.62%2076.97%2054.24%2076.94%2053.86%2076.9%2053.5%2076.84%2053.13%2076.78%2052.77%2076.7%2052.42%2076.61%2052.07%2076.51%2051.72%2076.39%2051.38%2076.27%2051.04%2076.14%2050.71%2075.99%2050.39%2075.84%2050.07%2075.68%2049.75%2075.5%2049.45%2075.32%2049.14%2075.13%2048.85%2074.92%2048.56%2074.71%2048.28%2074.49%2048%2074.26%2047.73%2074.03%2047.47%2073.78%2047.22%2073.53%2046.97%2073.27%2046.74%2073%2046.51%2072.72%2046.29%2072.44%2046.08%2072.15%2045.87%2071.86%2045.68%2071.55%2045.5%2071.25%2045.32%2070.93%2045.16%2070.61%2045.01%2070.29%2044.86%2069.96%2044.73%2069.62%2044.61%2069.28%2044.49%2068.93%2044.39%2068.58%2044.3%2068.23%2044.22%2067.87%2044.16%2067.5%2044.1%2067.14%2044.06%2066.76%2044.03%2066.38%2044.01%2066%2044%2065.62%2044.01%2065.24%2044.03%2064.86%2044.06%2064.5%2044.1%2064.13%2044.16%2063.77%2044.22%2063.42%2044.3%2063.07%2044.39%2062.72%2044.49%2062.38%2044.61%2062.04%2044.73%2061.71%2044.86%2061.39%2045.01%2061.07%2045.16%2060.75%2045.32%2060.45%2045.5%2060.14%2045.68%2059.85%2045.87%2059.56%2046.08%2059.28%2046.29%2059%2046.51%2058.73%2046.74%2058.47%2046.97%2058.22%2047.22%2057.97%2047.47%2057.74%2047.73%2057.51%2048%2057.29%2048.28%2057.08%2048.56%2056.87%2048.85%2056.68%2049.14%2056.5%2049.45%2056.32%2049.75%2056.16%2050.07%2056.01%2050.39%2055.86%2050.71%2055.73%2051.04%2055.61%2051.38%2055.49%2051.72%2055.39%2052.07%2055.3%2052.42%2055.22%2052.77%2055.16%2053.13%2055.1%2053.5%2055.06%2053.86%2055.03%2054.24%2055.01%2054.62%2055%2055%2055.03%2055.99%2055.12%2056.96%2055.27%2057.91%2055.48%2058.86%2055.75%2059.79%2056.07%2060.72%2056.45%2061.64%2056.9%2062.55%2057.4%2063.47%2057.96%2064.37%2058.58%2065.28%2059.26%2066.17%2060%2067.06%2060.8%2067.95%2061.65%2068.82%2062.56%2069.68%2063.52%2070.52%2064.54%2071.36%2065.6%2072.17%2066.72%2072.97%2067.88%2073.75%2069.08%2074.52%2070.33%2075.26%2071.62%2075.98%2072.94%2076.68%2074.29%2077.35%2075.68%2078%2077.1%2078.62%2078.55%2079.22%2080.02%2079.8%2081.52%2080.34%2083.03%2080.86%2084.56%2081.35%2086.11%2081.81%2087.67%2082.24%2089.24%2082.64%2090.82%2083.01%2092.41%2083.35%2093.99%2083.66%2095.58%2083.94%2097.17%2084.19%2098.75%2084.4%20100.32%2084.58%20101.89%2084.73%20103.44%2084.85%20104.98%2084.93%20106.5%2084.98%20108%2085%20106.83%2085.12%20105.7%2085.46%20104.67%2086.01%20103.76%2086.76%20103.01%2087.67%20102.46%2088.7%20102.12%2089.83%20102%2091%20102.12%2092.17%20102.46%2093.3%20103.01%2094.33%20103.76%2095.24%20104.67%2095.99%20105.7%2096.54%20106.83%2096.88%20108%2097%20106.23%2096.98%20104.46%2096.92%20102.67%2096.82%20100.87%2096.69%2099.06%2096.52%2097.25%2096.31%2095.44%2096.06%2093.62%2095.78%2091.81%2095.46%2090%2095.11%2088.19%2094.72%2086.38%2094.3%2084.59%2093.84%2082.8%2093.34%2081.03%2092.82%2079.27%2092.25%2077.52%2091.66%2075.79%2091.02%2074.08%2090.36%2072.39%2089.66%2070.73%2088.93%2069.08%2088.16%2067.47%2087.36%2065.88%2086.52%2064.33%2085.65%2062.81%2084.74%2061.32%2083.8%2059.87%2082.83%2058.46%2081.81%2057.09%2080.76%2055.76%2079.67%2054.48%2078.55%2053.24%2077.38%2052.06%2076.17%2050.93%2074.93%2049.86%2073.64%2048.86%2072.31%2047.91%2070.93%2047.04%2069.52%2046.23%2068.06%2045.51%2066.55%2044.87%2065.01%2044.31%2063.42%2043.85%2061.8%2043.48%2060.15%2043.22%2058.46%2043.05%2056.74%2043%2055%2043.01%2054.21%2043.05%2053.43%2043.12%2052.66%2043.21%2051.89%2043.33%2051.12%2043.47%2050.37%2043.63%2049.62%2043.82%2048.89%2044.03%2048.16%2044.27%2047.44%2044.53%2046.74%2044.81%2046.04%2045.11%2045.36%2045.43%2044.69%2045.78%2044.03%2046.14%2043.38%2046.52%2042.75%2046.93%2042.13%2047.35%2041.53%2047.79%2040.94%2048.25%2040.36%2048.73%2039.8%2049.22%2039.26%2049.73%2038.73%2050.26%2038.22%2050.8%2037.73%2051.36%2037.25%2051.94%2036.79%2052.53%2036.35%2053.13%2035.93%2053.75%2035.52%2054.38%2035.14%2055.03%2034.78%2055.69%2034.43%2056.36%2034.11%2057.04%2033.81%2057.74%2033.53%2058.44%2033.27%2059.16%2033.03%2059.89%2032.82%2060.62%2032.63%2061.37%2032.47%2062.12%2032.33%2062.89%2032.21%2063.66%2032.12%2064.43%2032.05%2065.21%2032.01%2066%2032%2066.79%2032.01%2067.57%2032.05%2068.34%2032.12%2069.11%2032.21%2069.88%2032.33%2070.63%2032.47%2071.38%2032.63%2072.11%2032.82%2072.84%2033.03%2073.56%2033.27%2074.26%2033.53%2074.96%2033.81%2075.64%2034.11%2076.31%2034.43%2076.97%2034.78%2077.62%2035.14%2078.25%2035.52%2078.87%2035.93%2079.47%2036.35%2080.06%2036.79%2080.64%2037.25%2081.2%2037.73%2081.74%2038.22%2082.27%2038.73%2082.78%2039.26%2083.27%2039.8%2083.75%2040.36%2084.21%2040.94%2084.65%2041.53%2085.07%2042.13%2085.48%2042.75%2085.86%2043.38%2086.22%2044.03%2086.57%2044.69%2086.89%2045.36%2087.19%2046.04%2087.47%2046.74%2087.73%2047.44%2087.97%2048.16%2088.18%2048.89%2088.37%2049.62%2088.53%2050.37%2088.67%2051.12%2088.79%2051.89%2088.88%2052.66%2088.95%2053.43%2088.99%2054.21%2089%2055%2088.95%2056.74%2088.78%2058.46%2088.52%2060.15%2088.15%2061.8%2087.69%2063.42%2087.13%2065.01%2086.49%2066.55%2085.77%2068.06%2084.96%2069.52%2084.09%2070.93%2083.14%2072.31%2082.14%2073.64%2081.07%2074.93%2079.94%2076.17%2078.76%2077.38%2077.52%2078.55%2076.24%2079.67%2074.91%2080.76%2073.54%2081.81%2072.13%2082.83%2070.68%2083.8%2069.19%2084.74%2067.67%2085.65%2066.12%2086.52%2064.53%2087.36%2062.92%2088.16%2061.27%2088.93%2059.61%2089.66%2057.92%2090.36%2056.21%2091.02%2054.48%2091.66%2052.73%2092.25%2050.97%2092.82%2049.2%2093.34%2047.41%2093.84%2045.62%2094.3%2043.81%2094.72%2042%2095.11%2040.19%2095.46%2038.38%2095.78%2036.56%2096.06%2034.75%2096.31%2032.94%2096.52%2031.13%2096.69%2029.33%2096.82%2027.54%2096.92%2025.77%2096.98%2024%2097%2022.83%2096.88%2021.7%2096.54%2020.67%2095.99%2019.76%2095.24%2019.01%2094.33%2018.46%2093.3%2018.12%2092.17%2018%2091%2018.12%2089.83%2018.46%2088.7%2019.01%2087.67%2019.76%2086.76%2020.67%2086.01%2021.7%2085.46%2022.83%2085.12Z%22/%3E%3Cpath%20fill=%22%237F77DD%22%20d=%22M117%2091C117%2095.97%20112.97%20100%20108%20100C103.03%20100%2099%2095.97%2099%2091C99%2086.03%20103.03%2082%20108%2082C112.97%2082%20117%2086.03%20117%2091Z%22/%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<style>
+  /* Laid out the way Apple lays out an app that has a canvas, such as Maps or
+     Freeform. The content fills the window: the graph, or the follow-up
+     lists. What steers it (the sidebar, the toolbar buttons, the ask field,
+     sheets) floats above in glass. Content itself is never glass.
+
+     System font, system colours, light and dark. The only branding is the
+     name. The blue and red are a step darker than the system's on light
+     backgrounds, so that text in them passes WCAG AA. */
+  :root{
+    --bg:#F2F2F7; --surface:#FFFFFF;
+    --ink:#000000; --ink-2:#3A3A3C; --muted:#636366;
+    --line:rgba(60,60,67,.14); --line-strong:#C7C7CC;
+    --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.2);
+    --accent:#0066CC; --accent-fill:#0071E3; --danger:#D70015; --ok:#34C759;
+    --topic:#34C759; --company:#FF9500; --intent:#FF2D55; --object:#8E8E93;
+
+    /* glass: a tint, the light its edge catches, and the shadow it casts */
+    --glass:rgba(255,255,255,.5); --glass-strong:rgba(240,240,246,.72); --glass-row:rgba(255,255,255,.72);
+    --thumb:rgba(255,255,255,.95);
+    --rim-a:rgba(255,255,255,1); --rim-b:rgba(255,255,255,.3); --rim-c:rgba(255,255,255,.75);
+    --glass-shadow:0 0 0 .5px rgba(0,0,0,.07), 0 12px 40px rgba(24,32,60,.13), 0 1px 3px rgba(24,32,60,.07);
+    /* the canvas: a soft wash, as a desktop picture would give, and a dot grid */
+    --wash-a:rgba(10,132,255,.17); --wash-b:rgba(90,200,250,.2); --wash-c:rgba(255,149,0,.08);
+    --dot:rgba(60,60,67,.17); --edge:rgba(242,242,247,.85);
+    --spring:cubic-bezier(.32,.72,0,1);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#000000; --surface:#1C1C1E;
+      --ink:#FFFFFF; --ink-2:#D8D8DE; --muted:#A1A1A8;
+      --line:rgba(120,120,128,.34); --line-strong:#48484A;
+      --fill:rgba(120,120,128,.24); --fill-2:rgba(120,120,128,.36);
+      --accent:#409CFF; --accent-fill:#0071E3; --danger:#FF6961; --ok:#30D158;
+      --topic:#30D158; --company:#FF9F0A; --intent:#FF375F; --object:#8E8E93;
+
+      --glass:rgba(80,80,90,.32); --glass-strong:rgba(36,36,40,.66); --glass-row:rgba(255,255,255,.07);
+      --thumb:rgba(255,255,255,.2);
+      --rim-a:rgba(255,255,255,.34); --rim-b:rgba(255,255,255,.05); --rim-c:rgba(255,255,255,.16);
+      --glass-shadow:0 14px 44px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+      --wash-a:rgba(10,132,255,.26); --wash-b:rgba(64,200,224,.14); --wash-c:rgba(255,159,10,.06);
+      --dot:rgba(235,235,245,.11); --edge:rgba(0,0,0,.72);
+    }
+  }
+  *{box-sizing:border-box; margin:0;}
+  html,body{height:100%;}
+  /* No letter-spacing anywhere: the system font sets its own tracking.
+     --inset-l is where content can start: past the sidebar when it is out. */
+  body{background:var(--bg); color:var(--ink); --inset-l:356px;
+    font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body.side-closed{--inset-l:20px;}
+  body::before{content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(60vmax 50vmax at 0% 0%, var(--wash-a), transparent 70%),
+      radial-gradient(55vmax 45vmax at 100% 100%, var(--wash-b), transparent 70%),
+      radial-gradient(40vmax 30vmax at 100% 0%, var(--wash-c), transparent 70%);}
+  h1,h2,h3{font-weight:600;}
+  input,textarea,button{font:inherit; color:inherit;}
+  :focus-visible{outline:3px solid rgba(0,113,227,.6); outline-offset:2px;}
+
+  /* ---- glass ---- */
+  .glass{background:var(--glass); box-shadow:var(--glass-shadow);
+    -webkit-backdrop-filter:blur(20px) saturate(190%); backdrop-filter:blur(20px) saturate(190%);}
+  /* for panes that hold a lot of text */
+  .glass.strong{background:var(--glass-strong);
+    -webkit-backdrop-filter:blur(40px) saturate(190%); backdrop-filter:blur(40px) saturate(190%);}
+  /* the edge catches light: bright at the top left, again at the bottom right */
+  .glass::after{content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none;
+    background:linear-gradient(135deg, var(--rim-a), var(--rim-b) 38%, var(--rim-b) 62%, var(--rim-c));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;}
+
+  /* ---- controls ---- */
+  button{position:relative; cursor:pointer; border:none; background:none; color:var(--ink);
+    border-radius:999px; padding:8px 16px; font-weight:500;
+    transition:transform .3s var(--spring), background-color .15s ease, filter .15s ease, opacity .15s ease;}
+  button:active{transform:scale(.95);}
+  button:disabled{cursor:default; opacity:.45;}
+  button.glass:hover{filter:brightness(1.06);}
+  .round{width:38px; height:38px; padding:0; display:grid; place-items:center; flex:none;}
+  .quiet{background:var(--fill);}
+  .quiet:hover{background:var(--fill-2);}
+  .small{width:30px; height:30px;}
+  .primary{background:var(--accent-fill); color:#fff; font-weight:600;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 1px 3px rgba(0,0,0,.18);}
+  .primary:hover{filter:brightness(1.1);}
+  .plain{padding:0; border-radius:6px; color:var(--accent); font-weight:400;}
+  .plain:hover{text-decoration:underline;}
+  .danger{color:var(--danger);}
+
+  /* a segmented control: a lozenge slides under the chosen segment */
+  .seg{position:relative; flex:none; display:grid; grid-template-columns:1fr 1fr; padding:3px; border-radius:999px;}
+  .seg::before{content:""; position:absolute; top:3px; bottom:3px; left:3px; width:calc(50% - 3px);
+    border-radius:999px; background:var(--thumb);
+    box-shadow:0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04);
+    transition:transform .45s var(--spring);}
+  .seg[data-on="follow"]::before{transform:translateX(100%);}
+  .seg button{padding:6px 18px; font-size:13px; z-index:1; white-space:nowrap;}
+  .seg button.active{font-weight:600;}
+
+  /* a pull-down menu behind the "more" button */
+  .menu{position:relative;}
+  .menu summary{position:relative; list-style:none; cursor:pointer; border-radius:50%;
+    transition:transform .3s var(--spring), filter .15s ease;}
+  .menu summary::-webkit-details-marker{display:none;}
+  .menu summary:hover{filter:brightness(1.06);}
+  .menu summary:active{transform:scale(.95);}
+  .menu-items{position:absolute; right:0; top:46px; z-index:30; min-width:220px; padding:6px; border-radius:20px;
+    transform-origin:top right; animation:menuin .3s var(--spring);}
+  @keyframes menuin{from{opacity:0; transform:scale(.88);}}
+  .menu-items button{display:block; width:100%; text-align:left; border-radius:14px; padding:8px 12px; font-weight:400;}
+  .menu-items button:hover{background:var(--fill);}
+  .menu-items hr{border:none; border-top:1px solid var(--line); margin:5px 12px;}
+
+  /* ---- the sidebar: people, or one person ---- */
+  .sidebar{position:fixed; z-index:14; top:12px; left:12px; bottom:12px; width:320px; border-radius:26px;
+    display:flex; overflow:hidden; transition:transform .5s var(--spring), visibility 0s;}
+  .pages{flex:none; width:200%; display:flex; transition:transform .5s var(--spring);}
+  .sidebar.detail .pages{transform:translateX(-50%);}
+  .page{width:50%; min-width:0; min-height:0; display:flex; flex-direction:column;}
+  .side-top{display:flex; align-items:center; justify-content:space-between; min-height:60px; padding:14px 14px 8px 20px;}
+  #panel .side-top{padding-left:14px;}
+  /* the product's name, in the system font */
+  .wm{font-size:21px; line-height:1.2; font-weight:600; color:var(--ink);}
+  .side-head{display:flex; align-items:baseline; justify-content:space-between; padding:6px 20px 6px;
+    font-size:13px; color:var(--muted);}
+  .side-head h2{font-size:13px;}
+  .people{flex:1; min-height:0; overflow-y:auto; padding:0 10px 10px;}
+  .people .empty{padding:6px 10px; font-size:13px;}
+  .status{display:flex; align-items:center; gap:7px; padding:11px 20px 14px; border-top:1px solid var(--line);
+    font-size:13px; color:var(--muted);}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--line-strong); flex:none;}
+  .dot.ok{background:var(--ok);}
+  .dot.bad{background:var(--danger);}
+
+  /* a person in a list: photo or monogram, name, one line about them */
+  .prow{display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:7px 10px;
+    border-radius:16px; font-weight:400;}
+  .prow:hover{background:var(--fill);}
+  .prow:active{transform:scale(.98);}
+  .prow .col{min-width:0; flex:1; display:flex; flex-direction:column;}
+  .prow .nm, .prow .og{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .nm{font-weight:600;}
+  .og{color:var(--muted); font-size:13px;}
+  .prow .ct{color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums;}
+  /* someone who arrived while the page was open gets the "new" dot */
+  .prow.newin .nm::before{content:""; display:inline-block; width:8px; height:8px; border-radius:50%;
+    background:var(--accent-fill); margin-right:6px; vertical-align:1px;}
+  .chev{width:7px; height:12px; color:var(--muted); opacity:.6; flex:none;}
+
+  /* a photo when the backend has one, a monogram otherwise, as Contacts does */
+  .av{width:36px; height:36px; border-radius:50%; flex:none; overflow:hidden; display:grid; place-items:center;
+    background:linear-gradient(#A1A6B0,#7B7F88); color:#fff;
+    font:500 15px/1 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;}
+  .av img{width:100%; height:100%; object-fit:cover; display:block;}
+  .av.xl{width:88px; height:88px; font-size:36px; box-shadow:0 6px 20px rgba(0,0,0,.16);}
+
+  /* one person */
+  .pscroll{flex:1; min-height:0; overflow-y:auto; padding:0 12px 20px;}
+  .phead{display:flex; flex-direction:column; align-items:center; text-align:center; padding:0 12px 2px;}
+  .phead h2{font-size:22px; line-height:1.2; font-weight:700; margin-top:12px;}
+  .phead p{color:var(--muted);}
+  .phead .foot{padding:2px 0 0;}
+
+  /* ---- inset grouped lists, as in Settings ---- */
+  .grp{margin-top:22px;}
+  .grp h3{font-size:15px; color:var(--muted); padding:0 14px 7px;}
+  .grp ul{list-style:none; margin:0; padding:0 14px; background:var(--surface); border-radius:18px;}
+  .sidebar .grp ul{background:var(--glass-row);}
+  .grp li{padding:11px 0; border-top:1px solid var(--line);}
+  .grp li:first-child{border-top:none;}
+  .grp li code{font:12px ui-monospace,"SF Mono",Menlo,monospace; color:var(--muted);}
+  .grp li i{font-style:normal; color:var(--muted);}
+  .when{font-size:13px; color:var(--muted);}
+  .grp li > .when, .grp li > .og{display:block;}
+  .rowtop{display:flex; justify-content:space-between; align-items:baseline; gap:12px;}
+  .rowtop .when{flex:none;}
+  .foot{font-size:13px; color:var(--muted); padding:8px 14px 0;}
+  .empty{color:var(--muted); padding:12px 0;}
+
+  /* ---- the toolbar: a title on the canvas, and glass controls ---- */
+  .bar{position:fixed; z-index:15; top:14px; left:var(--inset-l); right:20px; display:flex; align-items:flex-start;
+    gap:10px; pointer-events:none; transition:left .5s var(--spring);}
+  .bar > *{pointer-events:auto;}
+  .bar .side-toggle{display:none;}
+  body.side-closed .bar .side-toggle{display:grid;}
+  .lead{margin-right:auto; min-width:0; pointer-events:none;}
+  .bar h1{font-size:26px; line-height:38px; font-weight:700;}
+  .legend{position:fixed; z-index:15; top:54px; left:var(--inset-l); right:20px; pointer-events:none;
+    display:flex; gap:3px 14px; flex-wrap:wrap; font-size:12px; color:var(--muted);
+    transition:left .5s var(--spring);}
+  .legend span{display:flex; align-items:center; gap:6px;}
+  body[data-view="follow"] .legend{display:none;}
+  .legend [hidden]{display:none;}
+  .lg{width:9px; height:9px; flex:none; border-radius:50%;}
+  .lg.person{width:13px; height:13px; background:linear-gradient(#A1A6B0,#7B7F88);
+    box-shadow:0 0 0 1.5px #fff, 0 1px 3px rgba(0,0,0,.25);}
+  .lg.count{width:auto; height:14px; padding:0 5px; border-radius:7px; background:var(--surface);
+    box-shadow:0 0 0 1px var(--line); font-size:10px; line-height:14px; font-weight:600; font-style:normal;
+    color:var(--muted);}
+  .lg.topic{background:var(--topic);}
+  .lg.company{background:var(--company); border-radius:2px;}
+  .lg.intent{background:var(--intent); border-radius:2px; transform:rotate(45deg);}
+  .lg.object{background:var(--object); border-radius:2px;}
+  #banner{display:none; position:fixed; z-index:16; top:104px; left:var(--inset-l); right:20px; margin:0 auto;
+    width:fit-content; padding:9px 18px; border-radius:999px; color:var(--danger); font-size:13px;}
+  #banner.show{display:block;}
+
+  .view{display:none;}
+  .view.on{display:block;}
+
+  /* ---- the graph: the whole window is its canvas ---- */
+  #graph{position:fixed; inset:0; display:block; width:100%; height:100%;
+    background-image:radial-gradient(circle, var(--dot) 1px, transparent 1.5px); background-size:24px 24px;}
+  .glink{fill:none; stroke:var(--line-strong); stroke-width:1.2; stroke-linecap:round;
+    transition:opacity .25s ease, stroke .25s ease;}
+  .gnode{cursor:grab; transition:opacity .25s ease;}
+  .gnode.person{cursor:pointer;}
+  .gnode text{pointer-events:none;}
+  /* a person: their photo or monogram in a white ring, lifted off the canvas */
+  .gnode.person .body{stroke:#fff; stroke-width:2.5; filter:drop-shadow(0 3px 7px rgba(0,0,0,.22));}
+  /* added without a name yet */
+  .gnode.person .body.unnamed{stroke:var(--muted); stroke-width:1.5; stroke-dasharray:4 3;}
+  .initials{fill:#fff; text-anchor:middle;
+    font:500 20px ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;}
+  /* the name under a person has a halo in the canvas colour, to stay readable over lines */
+  .gnode.person .nname{text-anchor:middle; font-size:12.5px; font-weight:600; fill:var(--ink);
+    paint-order:stroke; stroke:var(--bg); stroke-width:3px; stroke-linejoin:round;}
+  /* how many times you have met them, as a badge */
+  .count rect{fill:var(--surface); stroke:var(--line); stroke-width:1;}
+  .count text{text-anchor:middle; font-size:10px; font-weight:600; fill:var(--muted);}
+  /* a tag: a capsule with its kind's glyph and its name */
+  .gnode.tag .body{fill:var(--surface); stroke:var(--line); stroke-width:1;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.1));}
+  .gnode.tag .nname{font-size:12px; fill:var(--ink-2);}
+  /* pointing at something brings its connections forward */
+  #graph.focused .gnode:not(.near){opacity:.25;}
+  #graph.focused .glink:not(.near){opacity:.2;}
+  #graph.focused .glink.near{stroke:var(--accent-fill); stroke-width:1.6;}
+  /* a ring around whatever just arrived from the glasses */
+  .ring{fill:none; stroke:var(--accent-fill); stroke-width:2; opacity:0; transition:opacity .3s ease;}
+  .gnode.newin .ring{opacity:1;}
+
+  /* ---- asking: a field docked at the bottom, the answer above it ---- */
+  .dock{position:fixed; z-index:15; left:var(--inset-l); right:20px; bottom:18px; display:flex;
+    flex-direction:column; align-items:center; gap:10px; pointer-events:none; transition:left .5s var(--spring);}
+  .dock > *{pointer-events:auto; width:min(560px, 100%);}
+  .askbar{position:relative; display:flex; align-items:center; gap:8px; padding:6px 6px 6px 16px; border-radius:999px;}
+  .askbar > svg{color:var(--muted); flex:none;}
+  .askbar input{flex:1; min-width:0; background:none; border:none; outline:none; padding:8px 0;}
+  .askbar input::placeholder, #transcript::placeholder{color:var(--muted);}
+  .askbar:focus-within{outline:3px solid rgba(0,113,227,.6); outline-offset:2px;}
+  .askbar .round{width:36px; height:36px;}
+  #answer{position:relative; display:none; border-radius:26px; padding:16px 16px 14px;}
+  #answer.show{display:block; animation:pop .45s var(--spring);}
+  #answer > button{position:absolute; top:10px; right:10px; z-index:1;}
+  #answerBody{max-height:min(46vh, 400px); overflow-y:auto; overflow-x:hidden; margin:0 -8px; padding:0 8px;}
+  #answerBody > :first-child{padding-right:36px;}
+  #answerBody h3{font-size:13px; color:var(--muted); padding-bottom:2px;}
+  #answerBody .rows{margin:6px -8px 0;}
+  #answerBody .foot{padding:8px 0 0;}
+  #answerBody .empty{padding:2px 0;}
+  @keyframes pop{from{opacity:0; transform:translateY(14px) scale(.96);}}
+
+  /* ---- follow-ups: lists that scroll under the toolbar ---- */
+  #view-follow{padding:92px 20px 48px var(--inset-l); transition:padding-left .5s var(--spring);}
+  .narrow{max-width:720px;}
+  /* where content meets the toolbar it blurs and fades, instead of a hard bar */
+  .edge{display:none; position:fixed; z-index:12; top:0; left:0; right:0; height:96px; pointer-events:none;
+    background:linear-gradient(var(--edge), transparent);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    -webkit-mask-image:linear-gradient(#000 50%, transparent); mask-image:linear-gradient(#000 50%, transparent);}
+  body[data-view="follow"] .edge{display:block;}
+
+  /* ---- notices that something arrived from the glasses ---- */
+  #toasts{position:fixed; top:66px; right:20px; z-index:60; display:flex; flex-direction:column; gap:8px;
+    align-items:flex-end; pointer-events:none;}
+  .toast{position:relative; width:min(330px, calc(100vw - 40px)); border-radius:22px; padding:11px 16px;
+    animation:toastin .5s var(--spring);}
+  .toast.out{animation:toastout .3s ease-in forwards;}
+  @keyframes toastin{from{opacity:0; transform:translateX(40px) scale(.96);}}
+  @keyframes toastout{to{opacity:0; transform:translateX(40px);}}
+  .toast .tmsg{font-weight:600; font-size:13px;}
+  .toast .tsub{color:var(--muted); font-size:13px;}
+
+  /* ---- sheets and alerts ---- */
+  dialog{margin:auto; border:none; padding:0; color:var(--ink); overflow:visible; border-radius:28px;}
+  dialog[open]{animation:pop .45s var(--spring);}
+  dialog::backdrop{background:rgba(0,0,0,.22);}
+  .alert{width:min(320px, calc(100vw - 40px)); padding:22px;}
+  .alert h2{font-size:17px;}
+  .alert p{color:var(--muted); margin-top:6px;}
+  .alert-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px;}
+  .alert-actions button{padding:11px 0; background:var(--fill); color:var(--accent);}
+  .alert-actions button:hover{background:var(--fill-2);}
+  .alert-actions button.danger{color:var(--danger);}
+  .sheet{width:min(540px, calc(100vw - 32px)); padding:14px 16px 18px;}
+  .sheet-bar{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;}
+  .sheet-bar h2{font-size:17px; text-align:center;}
+  .sheet-bar > :first-child{justify-self:start;}
+  .sheet-bar > :last-child{justify-self:end;}
+  .sheet .sub{color:var(--muted); font-size:13px; margin:14px 4px 0;}
+  #transcript{display:block; width:100%; resize:vertical; min-height:120px; margin-top:10px;
+    background:var(--glass-row); border:none; border-radius:18px; padding:12px 14px; line-height:1.4;}
+  #transcript:focus-visible{outline-offset:0;}
+  .demos{margin:10px 4px 0; font-size:13px; color:var(--muted); display:flex; gap:4px 14px; flex-wrap:wrap;}
+  #feed{margin:16px 4px 0; border-top:1px solid var(--line); max-height:min(32vh, 260px); overflow-y:auto;}
+  .entry{padding:11px 0; border-bottom:1px solid var(--line);}
+  .entry:last-child{border-bottom:none; padding-bottom:0;}
+  .entry .who{display:flex; justify-content:space-between; align-items:baseline; gap:12px; font-weight:600;}
+  .badge{font-weight:400; font-size:13px; color:var(--muted);}
+  .facts{font-size:13px; color:var(--muted); margin-top:2px;}
+
+  @media (min-width:821px){
+    /* what only the narrow layout has: the sheet's handle, the name in the toolbar */
+    .narrow-only{display:none !important;}
+    body.side-closed .sidebar{transform:translateX(calc(-100% - 24px)); visibility:hidden;
+      transition:transform .5s var(--spring), visibility 0s .5s;}
+  }
+  /* On a narrow window, which is to say a phone, the layout is Find My's: the
+     canvas fills the screen and the people are a sheet at the bottom that is
+     pulled up. The sheet rests at three heights, which the script sets as
+     --sheet-h. The ask field moves to the top, under the toolbar, so that the
+     bottom belongs to the sheet. */
+  @media (max-width:820px){
+    body, body.side-closed{--inset-l:12px;}
+    .wide-only{display:none !important;}
+
+    /* ---- the sheet ---- */
+    .sidebar{top:auto; left:8px; right:8px; bottom:8px; width:auto; height:var(--sheet-h, 66px);
+      border-radius:30px; flex-direction:column; transition:height .5s var(--spring);}
+    .sidebar.dragging{transition:none; user-select:none; -webkit-user-select:none;}
+    .pages{flex:1 1 auto; min-height:0;}
+    .page{position:relative;}
+    /* the handle it is pulled by */
+    .grabber{flex:none; display:grid; place-items:center; width:100%; height:20px; padding:0; border-radius:0;}
+    .grabber:active{transform:none;}
+    .grabber span{width:36px; height:5px; border-radius:3px; background:var(--muted); opacity:.45;}
+    /* Below its full height a drag moves the sheet, so its lists do not
+       scroll. At full height they do, and only its top moves it. */
+    .sidebar:not([data-detent="full"]), .sidebar:not([data-detent="full"]) .people,
+    .sidebar:not([data-detent="full"]) .pscroll{touch-action:none;}
+    .sidebar:not([data-detent="full"]) .people, .sidebar:not([data-detent="full"]) .pscroll{overflow:hidden;}
+    .grabber, .side-head, #panel .side-top, .phead{touch-action:none;}
+
+    /* the list: a title, and whether the backend can be reached */
+    #listPage .side-top, #peopleCount{display:none;}
+    .side-head{padding:0 18px 14px; color:var(--ink);}
+    .side-head h2{font-size:22px; line-height:28px; font-weight:700;}
+    .status{position:absolute; top:5px; right:18px; padding:0; border:none;}
+
+    /* one person: a compact header, with the button to close it at its right */
+    #panel .side-top{position:absolute; top:0; right:12px; z-index:1; min-height:0; padding:0;}
+    .pscroll{padding-top:2px;}
+    .phead{display:grid; grid-template-columns:auto 1fr; column-gap:14px; align-items:center; text-align:left;
+      padding:0 44px 2px 6px;}
+    .phead .av.xl{grid-row:1 / span 3; width:56px; height:56px; font-size:24px; box-shadow:none;}
+    .phead h2{margin-top:0; font-size:20px;}
+
+    /* ---- the toolbar: the name, the two views, and one menu ---- */
+    .bar{top:12px; right:12px; align-items:center; gap:8px;}
+    .bar .side-toggle, body.side-closed .bar .side-toggle{display:none;}
+    .bar-wm{font-size:20px; margin-left:6px;}
+    /* The segmented control already says which view this is, so the title
+       is kept for screen readers only. */
+    .bar h1{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap;}
+    .seg button{padding:6px 9px;}          /* so the toolbar still fits a 360-wide phone */
+    .legend{display:none;}
+
+    /* ---- asking, at the top; what it brings up opens below it ---- */
+    .dock{top:62px; bottom:auto; right:12px; flex-direction:column-reverse; align-items:stretch;}
+    .dock > *{width:100%;}
+    #answerBody{max-height:min(38vh, 320px);}
+
+    #banner, #toasts{top:118px; left:12px; right:12px;}
+    #toasts{align-items:stretch;}
+    .toast{width:auto;}
+    /* room at the bottom for the sheet at its smallest */
+    #view-follow{padding:76px 12px 104px;}
+  }
+  /* "Reduce transparency" swaps the glass for a solid surface. */
+  @media (prefers-reduced-transparency:reduce){
+    .glass, .glass.strong{background:var(--surface); -webkit-backdrop-filter:none; backdrop-filter:none;}
+    body::before, .edge{display:none !important;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *, *::before, *::after{transition:none !important; animation:none !important;}
+  }
+</style>
+</head>
+<body data-view="net">
+
+<main>
+  <section id="view-net" class="view on" aria-label="Network">
+    <svg id="graph" role="img" aria-label="A map of the people you have met and what you talked about"></svg>
+
+    <div class="dock" id="dock">
+      <div id="answer" class="glass strong" role="region" aria-label="Answer" aria-live="polite">
+        <button class="round small quiet" onclick="closeAnswer()" aria-label="Close">
+          <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+        </button>
+        <div id="answerBody"></div>
+      </div>
+      <form class="askbar glass" onsubmit="askNetwork(); return false">
+        <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M12.8 12.8L17 17"/></svg>
+        <input id="q" placeholder="Ask about the people you've met" aria-label="Ask about the people you've met"
+               autocomplete="off" onfocus="offerQuestions()" onclick="offerQuestions()"
+               oninput="if(OFFERING) closeAnswer()">
+        <button class="round primary" id="askBtn" aria-label="Ask">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 16V4M4.5 9.5L10 4l5.5 5.5"/></svg>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <section id="view-follow" class="view" aria-label="Follow-ups">
+    <div class="narrow">
+      <section class="grp">
+        <h3>You owe</h3>
+        <ul id="owed"><li class="empty">No promises saved in this session.</li></ul>
+        <p class="foot">Promises from conversations added on this page since it was opened.</p>
+      </section>
+      <section class="grp">
+        <h3>Meetings</h3>
+        <ul id="timeline"><li class="empty">Nothing yet.</li></ul>
+      </section>
+    </div>
+  </section>
+</main>
+
+<div class="edge"></div>
+
+<aside class="sidebar glass strong" id="sidebar" aria-label="People">
+  <button class="grabber narrow-only" id="grabber" onclick="cycleDetent()" aria-label="Show more of the list" aria-expanded="false"><span></span></button>
+  <div class="pages">
+    <div class="page" id="listPage">
+      <div class="side-top">
+        <span class="wm">Thread</span>
+        <button class="round small quiet" onclick="toggleSidebar()" aria-label="Hide sidebar"><svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="3.2"/><path d="M7.6 4v12"/></svg></button>
+      </div>
+      <div class="side-head"><h2>People</h2><span id="peopleCount"></span></div>
+      <div id="roster" class="people"><div class="empty">Loading…</div></div>
+      <div class="status" role="status"><span id="dot" class="dot"></span><span id="dotLabel">Connecting…</span></div>
+    </div>
+
+    <div class="page" id="panel" aria-label="Person" inert>
+      <div class="side-top">
+        <button class="round small quiet" id="closeCard" onclick="closePanel()" aria-label="Back to people">
+          <svg class="wide-only" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg>
+          <svg class="narrow-only" viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+        </button>
+      </div>
+      <div class="pscroll">
+        <div class="phead">
+          <span id="cardAvatar" class="av xl"></span>
+          <h2 id="cardName">&nbsp;</h2>
+          <p id="cardMeta"></p>
+          <p id="cardNote" class="foot"></p>
+        </div>
+        <div id="cardBody"></div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<header class="bar">
+  <button class="glass round side-toggle" onclick="toggleSidebar()" aria-label="Show sidebar"><svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="3.2"/><path d="M7.6 4v12"/></svg></button>
+  <span class="wm bar-wm narrow-only">Thread</span>
+  <div class="lead">
+    <h1 id="title">Network</h1>
+  </div>
+  <div class="seg glass" id="seg" data-on="net" role="group" aria-label="View">
+    <button id="tab-net" class="active" aria-pressed="true" onclick="showView('net')">Network</button>
+    <button id="tab-follow" aria-pressed="false" onclick="showView('follow')">Follow-ups</button>
+  </div>
+  <button class="glass round wide-only" onclick="openAdd()" aria-label="Add a conversation">
+    <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
+  </button>
+  <details class="menu" id="more">
+    <summary class="glass round" aria-label="More">
+      <svg viewBox="0 0 20 20" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="4" cy="10" r="1.7"/><circle cx="10" cy="10" r="1.7"/><circle cx="16" cy="10" r="1.7"/></svg>
+    </summary>
+    <div class="menu-items glass strong">
+      <button class="narrow-only" onclick="openAdd()">Add a conversation</button>
+      <button id="seedBtn" onclick="seed(this)">Add demo people</button>
+      <button id="pauseBtn" onclick="toggleLive()">Pause updates</button>
+      <hr>
+      <button class="danger" id="resetBtn" onclick="resetAll()">Delete everything…</button>
+    </div>
+  </details>
+</header>
+
+<div class="legend">
+  <span data-kind="person"><i class="lg person"></i>Person</span>
+  <span data-kind="count"><i class="lg count">3</i>Times you have met</span>
+  <span data-kind="topic"><i class="lg topic"></i>Topic</span>
+  <span data-kind="company"><i class="lg company"></i>Company</span>
+  <span data-kind="intent"><i class="lg intent"></i>Intent</span>
+  <span data-kind="object"><i class="lg object"></i>Object</span>
+</div>
+
+<div id="banner" class="glass strong" role="alert">Can't reach the Thread backend. It will try again on your next action.</div>
+
+<div id="toasts" aria-live="polite"></div>
+
+<dialog id="addSheet" class="sheet glass strong" aria-labelledby="addTitle">
+  <div class="sheet-bar">
+    <button class="quiet" onclick="document.getElementById('addSheet').close()">Done</button>
+    <h2 id="addTitle">Add a conversation</h2>
+    <button class="primary" id="ingestBtn" onclick="ingest()">Save</button>
+  </div>
+  <p class="sub">Type or paste what someone said. It is filed the same way as a transcript from the phone.</p>
+  <textarea id="transcript" placeholder="Hi, I'm…" aria-labelledby="addTitle"></textarea>
+  <div class="demos">
+    <span>Examples</span>
+    <button class="plain" onclick="useDemo(0)">a founder</button>
+    <button class="plain" onclick="useDemo(1)">an investor</button>
+    <button class="plain" onclick="useDemo(2)">someone hiring</button>
+  </div>
+  <div id="feed"><div class="empty">Nothing saved yet.</div></div>
+</dialog>
+
+<dialog id="confirmReset" class="alert glass strong" aria-labelledby="confirmResetTitle">
+  <h2 id="confirmResetTitle">Delete everything?</h2>
+  <p>Every person, face and meeting is deleted from this backend. This can't be undone.</p>
+  <form method="dialog" class="alert-actions">
+    <button value="cancel">Cancel</button>
+    <button value="delete" class="danger">Delete</button>
+  </form>
+</dialog>
+
+<script>
+/* ---------- API ---------- */
+/* The backend serves this page, so the API lives at the same address. Opened
+   straight from disk instead, it talks to a backend running on this machine. */
+const API_BASE = location.protocol === "file:" ? "http://localhost:8000" : "";
+
+/* POST /api/<endpoint>. The server answers {ok:true, data:{…}} or
+   {ok:false, error:"…"}. An error it sent is thrown with `fromServer` set, so
+   callers can tell "the server said no" from "the server isn't there". */
+async function call(endpoint, body, timeoutMs){
+  const ctl = new AbortController();
+  const t = setTimeout(()=>ctl.abort(), timeoutMs || 45000);
+  let r, j;
+  try{
+    r = await fetch(API_BASE + "/api/" + endpoint, {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(body || {}), signal:ctl.signal});
+    j = await r.json().catch(()=>null);
+  }catch(e){
+    setStatus(false);
+    throw e;
+  }finally{ clearTimeout(t); }
+  setStatus(true);
+  if(!j || j.ok !== true){
+    const err = new Error((j && j.error) || ("HTTP " + r.status));
+    err.fromServer = true;
+    throw err;
+  }
+  return j.data || {};
+}
+/* what to tell the user when a call fails */
+function failText(e, fallback){ return e && e.fromServer && e.message ? e.message : fallback; }
+const $ = id => document.getElementById(id);
+let ONLINE = true, LIVE = true;
+function setStatus(ok){
+  ONLINE = ok;
+  paintStatus();
+  $("banner").classList.toggle("show", !ok);
+}
+function paintStatus(){
+  $("dot").className = "dot " + (ONLINE ? "ok" : "bad");
+  $("dotLabel").textContent = !ONLINE ? "Offline"
+    : (LIVE ? "Connected" : "Connected, updates paused");
+}
+function esc(s){ return String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function arr(v){ return Array.isArray(v) ? v.filter(x=>x != null && x !== "") : []; }
+/* a JS string literal that is safe to sit inside a double-quoted HTML attribute */
+function jsArg(s){ return esc(JSON.stringify(String(s == null ? "" : s))); }
+function trunc(s, n){ s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
+
+/* ---------- photos + placeholder names ----------
+   The backend returns `photo_b64` (bare base64 JPEG) on roster and lookup for
+   anyone enrolled with a face. Everyone else degrades to initials. */
+const PHOTOS = new Map();               // name -> clean base64 payload
+function normPhoto(v){
+  if(typeof v !== "string") return "";
+  let s = v.trim();
+  if(!s) return "";
+  const i = s.indexOf("base64,");           // tolerate a full data: URL
+  if(i >= 0) s = s.slice(i + 7);
+  s = s.replace(/\s+/g, "");
+  return /^[A-Za-z0-9+/=]{64,}$/.test(s) ? s : "";
+}
+function photoUrl(name){
+  const b64 = PHOTOS.get(name);
+  if(!b64) return "";
+  const mime = b64.startsWith("iVBOR") ? "image/png" : "image/jpeg";
+  return "data:" + mime + ";base64," + b64;
+}
+/* remember a photo off any payload shape we get handed */
+function notePhoto(obj){
+  if(!obj || !obj.name) return false;
+  const p = normPhoto(obj.photo_b64 || obj.photo || "");
+  if(!p || PHOTOS.get(obj.name) === p) return false;
+  PHOTOS.set(obj.name, p);
+  return true;
+}
+/* auto-enrolled faces the user hasn't named yet: "New contact 01" */
+function isPlaceholder(name){ return /^new contact(\s+\d+)?$/i.test(String(name || "").trim()); }
+function initials(label){
+  const parts = String(label || "?").trim().split(/\s+/).filter(Boolean);
+  return (parts.map(w=>w[0]).join("") || "?").slice(0,2).toUpperCase();
+}
+function avatarHtml(name, cls){
+  const url = photoUrl(name);
+  const k = "av" + (cls ? " " + cls : "");
+  return url
+    ? `<span class="${k}"><img alt="" src="${esc(url)}"></span>`
+    : `<span class="${k}" aria-hidden="true">${esc(isPlaceholder(name) ? "?" : initials(name))}</span>`;
+}
+const CHEVRON = '<svg class="chev" viewBox="0 0 8 14" aria-hidden="true"><path d="M1 1l6 6-6 6" '
+  + 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function showView(name){
+  for(const v of ["net","follow"]){
+    $("tab-"+v).classList.toggle("active", v===name);
+    $("tab-"+v).setAttribute("aria-pressed", v===name);
+    $("view-"+v).classList.toggle("on", v===name);
+  }
+  $("seg").dataset.on = name;
+  document.body.dataset.view = name;
+  $("title").textContent = name === "net" ? "Network" : "Follow-ups";
+  window.scrollTo(0, 0);
+  /* The sheet's full height depends on the view, and on a phone it gets out of
+     the way of the follow-up lists. This also resizes the graph. */
+  setDetent(!isWide() && name === "follow" ? "peek" : detent);
+}
+/* The sidebar floats over the content, and is out until it is put away. On a
+   narrow window it is not a sidebar but a sheet (below), which is always
+   there. */
+const isWide = () => window.innerWidth > 820;
+function sidebarShown(){ return !isWide() || !document.body.classList.contains("side-closed"); }
+function setSidebar(show){
+  document.body.classList.toggle("side-closed", !show);
+  sizeGraph();
+}
+function toggleSidebar(){ setSidebar(!sidebarShown()); }
+
+/* ---------- the sheet ----------
+   On a narrow window the people are a sheet at the bottom, as in Find My. It
+   rests at three heights: just its title, about half the window, and nearly
+   all of it. It is pulled or flicked between them, and a tap on its handle
+   goes to the next. Below full height a drag anywhere on it moves it. At full
+   height its lists scroll, so only its top moves it. */
+const DETENTS = ["peek", "half", "full"];
+let detent = "peek";
+function detentHeight(name){
+  const h = window.innerHeight;
+  /* at full height it stops under the toolbar, and under the ask field where that shows */
+  const full = Math.max(200, h - (document.body.dataset.view === "follow" ? 70 : 118) - 8);
+  if(name === "full") return full;
+  if(name === "half") return Math.round(Math.min(h * .46, full));
+  return 66;
+}
+function setDetent(name){
+  detent = name;
+  const el = $("sidebar");
+  el.dataset.detent = name;
+  el.style.setProperty("--sheet-h", detentHeight(name) + "px");
+  $("grabber").setAttribute("aria-expanded", name !== "peek");
+  $("grabber").setAttribute("aria-label", name === "full" ? "Make the list smaller" : "Show more of the list");
+  sizeGraph();
+}
+function cycleDetent(){ setDetent(DETENTS[(DETENTS.indexOf(detent) + 1) % DETENTS.length]); }
+(function(){
+  const el = $("sidebar");
+  const TOP = ".grabber, .side-head, #panel .side-top, .phead";
+  let drag = null, swallow = false, lastWheel = 0;
+  el.addEventListener("pointerdown", e=>{
+    if(isWide() || (e.pointerType === "mouse" && e.button !== 0)) return;
+    if(detent === "full" && !e.target.closest(TOP)) return;
+    drag = {id:e.pointerId, y0:e.clientY, h0:el.getBoundingClientRect().height,
+            y:e.clientY, t:e.timeStamp, v:0, moved:false};
+  });
+  el.addEventListener("pointermove", e=>{
+    if(!drag || e.pointerId !== drag.id) return;
+    const dy = drag.y0 - e.clientY;
+    if(!drag.moved){
+      if(Math.abs(dy) < 6) return;       // still a tap
+      drag.moved = true;
+      el.classList.add("dragging");
+      try{ el.setPointerCapture(e.pointerId); }catch(err){}
+    }
+    /* speed in pixels a millisecond, upwards positive, for telling a flick */
+    if(e.timeStamp > drag.t) drag.v = (drag.y - e.clientY) / (e.timeStamp - drag.t);
+    drag.y = e.clientY; drag.t = e.timeStamp;
+    const h = Math.max(detentHeight("peek"), Math.min(detentHeight("full"), drag.h0 + dy));
+    el.style.setProperty("--sheet-h", h + "px");
+  });
+  function drop(e){
+    if(!drag || e.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if(!d.moved) return;
+    el.classList.remove("dragging");
+    /* a drag that began on a row must not also count as a tap on it */
+    swallow = true; setTimeout(()=>{ swallow = false; }, 400);
+    /* a flick goes to the next height that way; otherwise to the nearest */
+    const h = el.getBoundingClientRect().height;
+    const stops = DETENTS.map(n=>[n, detentHeight(n)]);
+    let to;
+    if(d.v > .4) to = (stops.find(s=>s[1] > h + 1) || stops[2])[0];
+    else if(d.v < -.4) to = (stops.slice().reverse().find(s=>s[1] < h - 1) || stops[0])[0];
+    else to = stops.reduce((a, b)=>Math.abs(b[1] - h) < Math.abs(a[1] - h) ? b : a)[0];
+    setDetent(to);
+  }
+  el.addEventListener("pointerup", drop);
+  el.addEventListener("pointercancel", drop);
+  el.addEventListener("click", e=>{
+    if(swallow){ swallow = false; e.stopPropagation(); e.preventDefault(); }
+  }, true);
+  /* with a mouse or trackpad, scrolling over the sheet pulls it up or lets it down */
+  el.addEventListener("wheel", e=>{
+    if(isWide() || e.timeStamp - lastWheel < 600) return;
+    const i = DETENTS.indexOf(detent);
+    if(e.deltaY > 4 && i < 2){ lastWheel = e.timeStamp; setDetent(DETENTS[i + 1]); }
+    else if(e.deltaY < -4 && i === 1){ lastWheel = e.timeStamp; setDetent("peek"); }
+  }, {passive:true});
+  window.addEventListener("resize", ()=>{
+    if(!isWide()) setDetent(detent);
+    else if(PINNED) pinPerson(null);     // the wide layout picks nobody out
+  });
+})();
+
+/* ---------- the graph ----------
+   People, and what they talked about. A person is their photo or monogram,
+   as in Contacts. A topic is a tag, as in Finder: a capsule with a glyph and
+   a name. Two people who talked about the same thing meet at one tag, which
+   is what the picture is for.
+
+   Meetings are not drawn, because there would be a dot for every one; how
+   many there were is the small number on the person. Each kind of tag has
+   its own glyph as well as its own colour, and the legend names them, so
+   nothing rests on colour alone. */
+const KIND = {
+  topic:   {glyph:"circle",  fill:"var(--topic)"},
+  company: {glyph:"square",  fill:"var(--company)"},
+  org:     {glyph:"square",  fill:"var(--company)"},
+  intent:  {glyph:"diamond", fill:"var(--intent)"},
+  object:  {glyph:"square",  fill:"var(--object)"}
+};
+const PERSON_R = 26, TAG_H = 26;
+const isPerson = d => d.kind === "person";
+const isMeeting = kind => kind === "encounter" || kind === "interaction";
+/* the legend's name for a kind; anything unknown is drawn as an object */
+const legendKind = kind => kind === "org" ? "company" : (KIND[kind] ? kind : "object");
+let nodes = [], links = [], sim, svg, defs, linkG, nodeG, W = 820, H = 540;
+let dragging = false;
+
+/* The graph's canvas is the whole window, but the graph itself keeps to the
+   part the glass doesn't cover. On a wide window that is beside the sidebar,
+   below the toolbar and above the ask field. On a narrow one it is below the
+   toolbar and the ask field and above the sheet; when the sheet is at full
+   height the graph is left where it was at half. */
+let region = {x0:0, x1:W, y0:0, y1:H};
+function freeRegion(){
+  const left = parseFloat(getComputedStyle(document.body).getPropertyValue("--inset-l")) || 20;
+  const r = isWide()
+    ? {x0:left, x1:W - 20, y0:104, y1:H - 92}
+    : {x0:left, x1:W - left, y0:118, y1:H - detentHeight(detent === "full" ? "half" : detent) - 24};
+  /* too little left over to be worth it: use everything */
+  return (r.x1 - r.x0 < 240 || r.y1 - r.y0 < 200) ? {x0:0, x1:W, y0:0, y1:H} : r;
+}
+const middle = () => [(region.x0 + region.x1)/2, (region.y0 + region.y1)/2];
+/* how much room a node needs around its centre */
+const reach = d => isPerson(d) ? PERSON_R + 24 : (d.w || 80)/2 + 10;
+
+function initGraph(){
+  svg = d3.select("#graph");
+  defs = svg.append("defs");
+  /* the grey a contact with no photo gets */
+  const mono = defs.append("linearGradient").attr("id","monogram")
+    .attr("x1",0).attr("y1",0).attr("x2",0).attr("y2",1);
+  mono.append("stop").attr("offset",0).attr("stop-color","#A1A6B0");
+  mono.append("stop").attr("offset",1).attr("stop-color","#7B7F88");
+  linkG = svg.append("g"); nodeG = svg.append("g");
+  sim = d3.forceSimulation()
+    .force("link", d3.forceLink().id(d=>d.id).distance(124).strength(.5))
+    .force("charge", d3.forceManyBody().strength(-380))
+    .force("center", d3.forceCenter(W/2, H/2))
+    /* a gentle pull inwards, so whoever is connected to nothing doesn't drift into a corner */
+    .force("x", d3.forceX(W/2).strength(n=>n.id === PINNED ? .8 : .05))
+    .force("y", d3.forceY(H/2).strength(n=>n.id === PINNED ? .8 : .075))
+    .force("collide", d3.forceCollide(reach))
+    .on("tick", ticked);
+  sizeGraph();
+  window.addEventListener("resize", sizeGraph);
+}
+/* called whenever the window, the view or the sidebar changes */
+function sizeGraph(){
+  const el = $("graph");
+  if(!el || !el.clientWidth) return;
+  W = el.clientWidth; H = el.clientHeight;
+  svg.attr("viewBox", [0,0,W,H]);
+  region = freeRegion();
+  const [cx, cy] = middle();
+  if(sim){
+    sim.force("center", d3.forceCenter(cx, cy));
+    sim.force("x").x(cx); sim.force("y").y(cy);
+    sim.alpha(.3).restart();
+  }
+}
+
+/* What the backend sends, turned into what is drawn: meetings become a count
+   on their person, and tags with the same name become one tag. */
+function graphData(g){
+  const raw = arr(g && g.nodes).filter(n=>n && n.id != null);
+  const rawLinks = arr(g && g.links).filter(l=>l && l.source != null && l.target != null);
+  const kindOf = new Map(raw.map(n=>[n.id, n.kind || ""]));
+  const met = new Map();                       // person id -> meetings
+  for(const l of rawLinks){
+    for(const [a, b] of [[l.source, l.target], [l.target, l.source]]){
+      if(kindOf.get(a) === "person" && isMeeting(kindOf.get(b))) met.set(a, (met.get(a) || 0) + 1);
+    }
+  }
+  const drawn = new Map();                     // the backend's id -> the id drawn
+  const tags = new Map();                      // kind and name -> the id drawn
+  const outNodes = [];
+  for(const n of raw){
+    const kind = n.kind || "object", label = String(n.label || "").trim();
+    if(isMeeting(kind)) continue;
+    if(kind === "person"){
+      outNodes.push({id:n.id, label, kind, count:met.get(n.id) || 0});
+      drawn.set(n.id, n.id);
+      continue;
+    }
+    const key = legendKind(kind) + ":" + label.toLowerCase();
+    if(!tags.has(key)){
+      tags.set(key, "tag:" + key);
+      outNodes.push({id:"tag:" + key, label, kind});
+    }
+    drawn.set(n.id, tags.get(key));
+  }
+  const seen = new Set(), outLinks = [];
+  for(const l of rawLinks){
+    const s = drawn.get(l.source), t = drawn.get(l.target);
+    if(!s || !t || s === t) continue;
+    const key = s < t ? s + "→" + t : t + "→" + s;
+    if(seen.has(key)) continue;
+    seen.add(key);
+    outLinks.push({source:s, target:t, key});
+  }
+  return {nodes:outNodes, links:outLinks};
+}
+
+/* photo fill for a person — an <image> inside a <pattern>, re-pointed
+   whenever the photo arrives or changes so late-arriving faces still land */
+function patternFor(d){
+  const url = photoUrl(d.label);
+  const id = "pf-" + String(d.id).replace(/[^A-Za-z0-9_-]/g, "");
+  let p = defs.select("#" + id);
+  if(!url){ p.remove(); return ""; }
+  if(p.empty()){
+    p = defs.append("pattern").attr("id", id)
+      .attr("patternContentUnits","objectBoundingBox").attr("width",1).attr("height",1);
+    p.append("image").attr("width",1).attr("height",1).attr("preserveAspectRatio","xMidYMid slice");
+  }
+  const img = p.select("image");
+  if(img.attr("href") !== url) img.attr("href", url).attr("xlink:href", url);
+  return "url(#" + id + ")";
+}
+/* a person: a ring for "just arrived", the photo or monogram, the name
+   underneath, and the number of meetings at the lower right */
+function buildPerson(me){
+  me.append("circle").attr("class","ring").attr("r", PERSON_R + 6);
+  me.append("circle").attr("class","body").attr("r", PERSON_R);
+  me.append("text").attr("class","initials").attr("dy", 6.5);
+  me.append("text").attr("class","nname").attr("dy", PERSON_R + 18);
+  const badge = me.append("g").attr("class","count")
+    .attr("transform", `translate(${PERSON_R * .74},${PERSON_R * .74})`);
+  badge.append("rect").attr("height", 16).attr("y", -8).attr("rx", 8);
+  badge.append("text").attr("dy", 3.6);
+}
+/* a tag: a capsule holding the kind's glyph and the name */
+function buildTag(me, d){
+  const k = KIND[d.kind] || KIND.object;
+  me.append("rect").attr("class","ring").attr("height", TAG_H + 8).attr("y", -TAG_H/2 - 4).attr("rx", TAG_H/2 + 4);
+  me.append("rect").attr("class","body").attr("height", TAG_H).attr("y", -TAG_H/2).attr("rx", TAG_H/2);
+  const glyph = k.glyph === "circle"
+    ? me.append("circle").attr("r", 4)
+    : me.append("rect").attr("width", 8).attr("height", 8).attr("x", -4).attr("y", -4).attr("rx", 2);
+  glyph.attr("class","glyph").style("fill", k.fill);
+  me.append("text").attr("class","nname").attr("dy", 4.2);
+}
+/* runs on every render (not just enter) so photos, names and counts stay in
+   step without rebuilding the node */
+function paintNode(el, d){
+  const me = d3.select(el);
+  me.select("title").text(isPerson(d) && d.count ? d.label + ", " + meetings(d.count) : d.label);
+  if(isPerson(d)){
+    const photo = patternFor(d), unnamed = isPlaceholder(d.label);
+    me.select(".body").style("fill", photo || "url(#monogram)").classed("unnamed", unnamed);
+    me.select(".initials").text(unnamed ? "?" : initials(d.label)).style("display", photo ? "none" : null);
+    me.select(".nname").text(trunc(d.label, 24));
+    const text = String(d.count), w = Math.max(16, 10 + text.length * 6);
+    const badge = me.select(".count").style("display", d.count ? null : "none");
+    badge.select("rect").attr("width", w).attr("x", -w/2);
+    badge.select("text").text(text);
+    return;
+  }
+  /* the capsule is as wide as its name; the name is measured once drawn, and
+     estimated while the graph is out of sight */
+  const name = me.select(".nname").text(trunc(d.label, 28));
+  const w = (name.node().getComputedTextLength() || name.text().length * 6.4) + 38;
+  d.w = w;
+  me.select(".ring").attr("x", -w/2 - 4).attr("width", w + 8);
+  me.select(".body").attr("x", -w/2).attr("width", w);
+  me.select(".glyph").attr("transform",
+    `translate(${-w/2 + 15},0)` + ((KIND[d.kind] || KIND.object).glyph === "diamond" ? " rotate(45)" : ""));
+  name.attr("x", -w/2 + 26);
+}
+
+function renderGraph(g, opts){
+  opts = opts || {};
+  const data = graphData(g);
+  const prev = new Map(nodes.map(n=>[n.id, n]));
+  const fresh = new Set();                       // ids that were not on screen
+  const [cx, cy] = middle();
+  nodes = data.nodes.map(n=>{
+    const was = prev.get(n.id);
+    if(!was && opts.announce) fresh.add(n.id);
+    return Object.assign(was || {x:cx + 40*(Math.random()-.5), y:cy + 40*(Math.random()-.5)}, n);
+  });
+  links = data.links;
+  /* drop a newcomer next to something it's already attached to, so it doesn't
+     fly in from the middle and shove the settled layout around */
+  const byId = new Map(nodes.map(n=>[n.id, n]));
+  if(fresh.size) for(const l of links){
+    const s = byId.get(l.source), t = byId.get(l.target);
+    for(const [a, b] of [[s,t],[t,s]]){
+      if(a && b && fresh.has(a.id) && !fresh.has(b.id) && b.x != null && a.__seeded !== true){
+        a.x = b.x + 50*(Math.random()-.5); a.y = b.y + 50*(Math.random()-.5); a.__seeded = true;
+      }
+    }
+  }
+  /* the legend lists only the kinds that are on the canvas */
+  const present = new Set(nodes.map(n=>isPerson(n) ? "person" : legendKind(n.kind)));
+  if(nodes.some(n=>n.count)) present.add("count");
+  for(const el of document.querySelectorAll(".legend [data-kind]")) el.hidden = !present.has(el.dataset.kind);
+
+  linkG.selectAll("path").data(links, l=>l.key).join(e=>e.append("path").attr("class","glink"));
+
+  const node = nodeG.selectAll("g.gnode").data(nodes, d=>d.id).join(
+    enter=>{
+      const gs = enter.append("g")
+        .attr("class", d=>"gnode " + (isPerson(d) ? "person" : "tag"))
+        .attr("transform", d=>`translate(${d.x},${d.y})`)
+        .on("click", (ev,d)=>{ if(isPerson(d)) openPerson(d.label); })
+        .on("mouseenter", (ev,d)=>focusNode(d))
+        .on("mouseleave", unfocus);
+      gs.append("title");
+      gs.each(function(d){
+        if(isPerson(d)) buildPerson(d3.select(this)); else buildTag(d3.select(this), d);
+      });
+      gs.call(d3.drag()
+        .on("start",(ev,d)=>{ dragging = true; if(!ev.active) sim.alphaTarget(.25).restart(); d.fx=d.x; d.fy=d.y; })
+        .on("drag",(ev,d)=>{ d.fx=ev.x; d.fy=ev.y; })
+        .on("end",(ev,d)=>{ dragging = false; if(!ev.active) sim.alphaTarget(0); d.fx=null; d.fy=null; unfocus(); }));
+      return gs;
+    });
+  node.each(function(d){ paintNode(this, d); });
+  /* highlight whatever just arrived, then let the class expire */
+  if(fresh.size){
+    const hot = node.filter(d=>fresh.has(d.id)).classed("newin", true);
+    setTimeout(()=>hot.classed("newin", false), 4800);
+  }
+
+  sim.nodes(nodes);
+  sim.force("link").links(links);
+  sim.force("collide").radius(reach);          // the tags have their widths now
+  /* a live poll must not re-run the whole layout — nudge it just enough to make
+     room for the newcomers, and leave a settled graph completely alone */
+  const heat = opts.live ? (fresh.size ? .16 : .04) : .55;
+  if(!opts.live || opts.changed !== false) sim.alpha(Math.max(sim.alpha(), heat)).restart();
+  const kept = pinnedNode();
+  if(kept) focusNode(kept);            // whatever just arrived joins the highlight
+  return fresh;
+}
+function ticked(){
+  for(const n of nodes){
+    const px = isPerson(n) ? PERSON_R + 20 : (n.w || 80)/2 + 6;
+    n.x = Math.max(region.x0 + px, Math.min(region.x1 - px, n.x));
+    n.y = Math.max(region.y0 + 34, Math.min(region.y1 - 48, n.y));
+  }
+  /* each line bows slightly, always to the same side, so lines leaving one
+     person fan out instead of crossing at the hub */
+  linkG.selectAll("path").attr("d", l=>{
+    const dx = l.target.x - l.source.x, dy = l.target.y - l.source.y;
+    const mx = (l.source.x + l.target.x)/2 - dy * .12, my = (l.source.y + l.target.y)/2 + dx * .12;
+    return `M${l.source.x},${l.source.y}Q${mx},${my} ${l.target.x},${l.target.y}`;
+  });
+  nodeG.selectAll("g.gnode").attr("transform", d=>`translate(${d.x},${d.y})`);
+}
+/* Pointing at something brings what it is connected to forward and fades the
+   rest. */
+function focusNode(d){
+  if(dragging) return;
+  const touches = l => l.source.id === d.id || l.target.id === d.id;
+  const near = new Set([d.id]);
+  for(const l of links) if(touches(l)){ near.add(l.source.id); near.add(l.target.id); }
+  svg.classed("focused", true);
+  nodeG.selectAll("g.gnode").classed("near", n=>near.has(n.id));
+  linkG.selectAll("path").classed("near", touches);
+}
+function unfocus(){
+  if(dragging) return;
+  const kept = pinnedNode();
+  if(kept){ focusNode(kept); return; }
+  svg.classed("focused", false);
+  svg.selectAll(".near").classed("near", false);
+}
+/* On a narrow window the person whose page is open stays highlighted, and is
+   drawn to the middle of what the sheet leaves visible, the way Find My
+   centres its map on whoever is chosen. */
+let PINNED = null;                     // that person's node id
+function pinnedNode(){ return PINNED ? nodes.find(n=>n.id === PINNED) : null; }
+function pinPerson(name){
+  const d = name ? nodes.find(n=>isPerson(n) && n.label === name) : null;
+  PINNED = d ? d.id : null;
+  /* setting a force's strength again makes it read PINNED afresh */
+  for(const axis of ["x", "y"]) sim.force(axis).strength(sim.force(axis).strength());
+  sim.alpha(Math.max(sim.alpha(), .5)).restart();
+  if(d) focusNode(d); else unfocus();
+}
+
+/* ---------- people, in the sidebar ---------- */
+function rosterPeople(data){
+  const seen = new Map();
+  for(const p of arr(data && data.people)){
+    if(!p || !p.name) continue;
+    notePhoto(p);
+    const cur = seen.get(p.name);
+    /* the same name can be listed more than once — keep the richest row */
+    if(!cur || (p.encounters||0) > (cur.encounters||0)) seen.set(p.name, p);
+  }
+  return [...seen.values()].sort((a,b)=>(b.encounters||0)-(a.encounters||0));
+}
+const ROSTER = new Map();              // name -> their roster row, for the person panel
+function metaOf(p){
+  return p ? ([p.role, p.org].filter(Boolean).join(", ") || p.relationship || "") : "";
+}
+function meetings(n){ return n + (n === 1 ? " meeting" : " meetings"); }
+function renderRoster(people, fresh){
+  fresh = fresh || new Set();
+  ROSTER.clear();
+  for(const p of people) ROSTER.set(p.name, p);
+  $("peopleCount").textContent = people.length || "";
+  const el = $("roster");
+  if(!people.length){
+    el.innerHTML = '<div class="empty">No one yet. To try it, choose Add demo people from the More menu.</div>';
+    return;
+  }
+  el.innerHTML = people.map(p=>{
+    const sub = isPlaceholder(p.name) ? "Needs a name" : metaOf(p);
+    const n = p.encounters || 0;
+    return `<button class="prow${fresh.has(p.name) ? " newin" : ""}"
+        data-name="${esc(p.name)}" onclick="openPerson(${jsArg(p.name)})">
+      ${avatarHtml(p.name)}
+      <span class="col"><span class="nm">${esc(p.name)}</span>${sub ? `<span class="og">${esc(sub)}</span>` : ""}</span>
+      ${n ? `<span class="ct" aria-label="${esc(meetings(n))}">${n}</span>` : ""}
+    </button>`;
+  }).join("");
+}
+
+/* ---------- adding a conversation ---------- */
+const DEMOS = [
+  "Hi, I'm Ada Okafor - I founded NuLedger. We do real-time reconciliation for fintechs, "
+  + "about forty customers now. We're raising a $2M seed and I'm looking for one more angel "
+  + "who really knows payments. If you know anyone at Stripe I'd love an intro.",
+
+  "Marcus Reeve, partner at Halcyon Capital. We write $500K to $1.5M cheques at pre-seed, "
+  + "mostly infrastructure and developer tools. Send me anything in agent tooling - and I "
+  + "promised I'd read your deck and get you notes by Friday.",
+
+  "Priya Raman, CTO at Lumen Health. We just closed our Series A so I'm hiring two backend "
+  + "engineers and a design lead this quarter. Happy to introduce you to our lead investor "
+  + "at Anthem if that's useful to you."
+];
+function useDemo(i){ $("transcript").value = DEMOS[i] || ""; $("transcript").focus(); }
+/* the plus button opens the sheet this all lives in */
+function openAdd(){ closeMenu(); $("addSheet").showModal(); $("transcript").focus(); }
+
+/* what saving a conversation changed, newest at the top */
+function addBubble(res){
+  const feed = $("feed");
+  const ph = feed.querySelector(".empty"); if(ph) ph.remove();
+  const name = res.saved || "Someone";
+  const topics = arr(res.topics), fresh = new Set(arr(res.new_topics)), fups = arr(res.followups);
+  for(const f of fups) PROMISES.push({who:name, text:f});
+  renderOwed();
+  const b = document.createElement("div");
+  b.className = "entry";
+  b.innerHTML = `<div class="who"><span>${esc(name)}</span>`
+    + `<span class="badge">${res.new_person ? "New" : "Updated"}</span></div>`
+    + (res.org ? `<div class="og">${esc(res.org)}</div>` : "")
+    + (topics.length ? `<div class="facts">Topics: ${topics.map(t=>
+        esc(t) + (fresh.has(t) ? " (new)" : "")).join(", ")}</div>` : "")
+    + fups.map(f=>`<div class="facts">You owe: ${esc(f)}</div>`).join("");
+  feed.prepend(b);
+}
+async function ingest(){
+  const ta = $("transcript"), btn = $("ingestBtn");
+  const transcript = ta.value.trim();
+  if(!transcript || btn.disabled) return;
+  const feed = $("feed");
+  const ph = feed.querySelector(".empty"); if(ph) ph.remove();
+  const wait = document.createElement("div");
+  wait.className = "thinking";
+  wait.textContent = "Saving…";
+  feed.prepend(wait);
+  btn.disabled = true; btn.textContent = "Saving…";
+  try{
+    const res = await call("ingest", {transcript}, 90000);   // waits on the language model
+    wait.remove();
+    if(res.saved){
+      await addBubble(res);
+      ta.value = "";
+    }else{
+      /* nobody introduced themselves, so nothing was stored — say so and keep
+         the transcript in the box rather than showing a made-up contact */
+      const none = document.createElement("div");
+      none.className = "empty";
+      none.textContent = "Not saved: " + (res.reason || "no name was mentioned") + ".";
+      feed.prepend(none);
+    }
+    await refresh();
+  }catch(e){
+    wait.className = "empty";
+    wait.textContent = failText(e, "Couldn't reach the backend. Try again.");
+    console.warn(e);
+  }
+  btn.disabled = false; btn.textContent = "Save";
+}
+
+/* ---------- asking ----------
+   The field is docked at the bottom of the window and what it brings up opens
+   above it: a few questions to try while it is empty, then the answer. */
+const TRY = ["Who is raising a seed round?", "Who did I promise an intro to?", "Who works in fintech?"];
+let OFFERING = false;                  // true while the questions to try are showing
+function offerQuestions(){
+  if($("answer").classList.contains("show") || $("q").value.trim()) return;
+  $("answerBody").innerHTML = `<h3>Try asking</h3><div class="rows">`
+    + TRY.map(t=>`<button class="prow" onclick="ask(${jsArg(t)})">${esc(t)}</button>`).join("") + `</div>`;
+  $("answer").classList.add("show");
+  OFFERING = true;
+}
+function closeAnswer(){ $("answer").classList.remove("show"); OFFERING = false; }
+function ask(q){ $("q").value = q; askNetwork(); }
+async function askNetwork(){
+  const question = $("q").value.trim();
+  const btn = $("askBtn"), box = $("answer"), body = $("answerBody");
+  if(!question || btn.disabled) return;
+  btn.disabled = true; OFFERING = false;
+  box.classList.add("show");
+  body.innerHTML = '<p class="empty">Looking…</p>';
+  try{
+    const res = await call("query", {question}, 90000);
+    const rows = arr(res.matches).map(m=>{
+      const name = (m && m.name) || String(m || "");
+      const sub = (m && (m.org || m.last)) || "";
+      return `<button class="prow" onclick="openPerson(${jsArg(name)})">
+        ${avatarHtml(name)}
+        <span class="col"><span class="nm">${esc(name)}</span>${sub ? `<span class="og">${esc(trunc(sub, 70))}</span>` : ""}</span>
+        ${CHEVRON}
+      </button>`;
+    }).join("");
+    body.innerHTML = `<p>${esc(res.reason || res.answer || "No one fits that yet.")}</p>`
+      + (rows ? `<div class="rows">${rows}</div>` : "")
+      + (res.searched != null ? `<p class="foot">Looked through ${esc(res.searched)} ${
+          res.searched === 1 ? "person" : "people"}.</p>` : "");
+  }catch(e){
+    body.innerHTML = '<p class="empty">' + esc(failText(e, "Couldn't reach the backend.")) + '</p>';
+    console.warn(e);
+  }
+  box.classList.add("show");            // it may have been dismissed while this loaded
+  btn.disabled = false;
+}
+
+/* ---------- one person: the sidebar's second page ---------- */
+let OPEN_NAME = "";
+/* The sidebar holds the list of people and one person's page side by side and
+   slides between them, the way a navigation stack pushes. The page that is
+   out of view is inert, so it can't be tabbed into. */
+function showDetail(on){
+  $("sidebar").classList.toggle("detail", on);
+  $("panel").inert = !on; $("listPage").inert = on;
+}
+function closePanel(){
+  const was = OPEN_NAME, hadFocus = $("panel").contains(document.activeElement);
+  showDetail(false);
+  OPEN_NAME = "";
+  if(PINNED) pinPerson(null);
+  /* going back puts the keyboard on the person just left */
+  const row = [...document.querySelectorAll("#roster .prow")].find(el=>el.dataset.name === was);
+  if(hadFocus && row) row.focus({preventScroll:true});
+}
+/* one inset group of rows with an optional heading, like a section in Settings;
+   `rows` are already HTML */
+function group(title, rows){
+  rows = rows.filter(Boolean);
+  if(!rows.length) return "";
+  return `<section class="grp">${title ? `<h3>${esc(title)}</h3>` : ""}`
+    + `<ul>${rows.map(r=>`<li>${r}</li>`).join("")}</ul></section>`;
+}
+/* The backend's page about a person is a small subset of Markdown. Each
+   "## heading" becomes a group and every line under it a row. The "# title"
+   is dropped, because the page already shows the name. */
+function mdGroups(md){
+  const inline = s => s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[^*])\*([^*]+)\*/g, "$1<i>$2</i>");
+  const groups = [{title:"", rows:[]}];
+  for(const raw of String(md == null ? "" : md).split(/\r?\n/)){
+    const line = raw.trim();
+    if(!line || /^-{3,}$/.test(line) || /^\*{3,}$/.test(line) || /^#\s/.test(line)) continue;
+    const h = line.match(/^#{2,3}\s+(.*)$/);
+    if(h){ groups.push({title:h[1], rows:[]}); continue; }
+    const text = /^[>*-]\s/.test(line) ? line.slice(2) : line;
+    groups[groups.length - 1].rows.push(inline(esc(text)));
+  }
+  return groups.map(g=>group(g.title, g.rows)).join("");
+}
+/* what the glasses would say: a headline, and the lines worth saying next */
+function lensHtml(r, name){
+  if(!r || r.found === false) return "";
+  /* a headline that only repeats the name and company adds nothing under them */
+  const plain = s => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const who = r.name || name;
+  const repeats = new Set([plain(who), plain([who, r.org].filter(Boolean).join(" "))]);
+  const headline = r.headline && !repeats.has(plain(r.headline)) ? `<b>${esc(r.headline)}</b>` : "";
+  return group("", [headline]) + group("Say next", arr(r.lines).map(l=>esc(l)));
+}
+/* topics / owed / history straight off lookup — each block is optional */
+function extrasHtml(r){
+  if(!r || r.found === false) return {html:"", drop:[]};
+  const topics = arr(r.topics).map(t=>String(t)).filter(Boolean);
+  const fups = arr(r.followups).map(f=>String(f)).filter(Boolean);
+  let html = "", drop = [];
+  if(arr(r.lines).length) drop.push("things to ask about", "say next");
+  if(topics.length){
+    html += group("Topics", [esc(topics.join(", "))]);
+    drop.push("discussed", "topics");
+  }
+  if(fups.length){
+    html += group("You owe", fups.map(f=>esc(f)));
+    drop.push("you owe them", "you owe", "follow-ups", "followups");
+  }
+  /* newest first, and each row may be a plain string in older payloads */
+  const rows = arr(r.history).slice().reverse().map(h=>{
+    const when = (h && (h.when || h.ts)) || "";
+    const what = typeof h === "string" ? h : ((h && (h.what || h.summary)) || "");
+    const kind = (h && h.kind) || "";
+    if(!when && !what) return "";
+    return `<span class="when">${esc(fmtTime(when) || when)}${kind ? ", " + esc(kind) : ""}</span>`
+      + `<span>${esc(what)}</span>`;
+  });
+  if(rows.some(Boolean)){
+    html += group("History", rows);
+    drop.push("history", "encounters");
+  }
+  return {html, drop};
+}
+/* the dossier repeats sections we just rendered natively — drop those headings */
+function dropSections(md, titles){
+  if(!titles.length) return md;
+  const want = new Set(titles.map(t=>t.toLowerCase()));
+  const out = []; let skip = false;
+  for(const line of String(md == null ? "" : md).split(/\r?\n/)){
+    const h = line.match(/^##\s+(.*)$/);
+    if(h){ skip = want.has(h[1].trim().toLowerCase()); if(skip) continue; }
+    if(!skip) out.push(line);
+  }
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+async function openPerson(name){
+  if(!name) return;
+  OPEN_NAME = name;
+  $("cardName").textContent = name;
+  paintCardHead(name);
+  showDetail(true);
+  if(!sidebarShown()) setSidebar(true);
+  if(!isWide()){
+    /* on a phone: clear the way, bring the sheet up, and pick them out on the canvas */
+    closeAnswer();
+    if(detent === "peek") setDetent("half");
+    pinPerson(name);
+  }
+  document.querySelector("#panel .pscroll").scrollTop = 0;
+  $("closeCard").focus({preventScroll:true});
+  const body = $("cardBody");
+  body.innerHTML = '<div class="empty">Looking up…</div>';
+  /* the lens view (lookup) and the full dossier (person_card) are independent —
+     one failing must not blank the other */
+  let failed = null;
+  const [rec, card] = await Promise.all([
+    call("lookup", {name}).catch(e=>{ failed = e; return null; }),
+    call("person_card", {name}).catch(e=>{ failed = e; return null; })
+  ]);
+  if(notePhoto(rec) || (rec && rec.name && rec.name !== name && notePhoto({name, photo_b64:rec.photo_b64}))){
+    nodeG.selectAll("g.gnode").each(function(d){ if(d.kind === "person") paintNode(this, d); });
+  }
+  if(OPEN_NAME !== name) return;        // someone else was opened while this loaded
+  paintCardHead(name);
+  const lens = lensHtml(rec, name);
+  const ex = extrasHtml(rec);
+  /* the dossier opens by repeating the name and company the page's header
+     already shows — when lookup found them, start at its first section instead */
+  let src = (card && card.md) || "";
+  if(rec && rec.found !== false && /^##\s/m.test(src)) src = src.slice(src.search(/^##\s/m));
+  src = dropSections(src, ex.drop);
+  body.innerHTML = (lens + ex.html + mdGroups(src))
+    || '<div class="empty">' + esc(failText(failed, "Nothing saved about this person yet.")) + '</div>';
+}
+/* the page's header: photo or monogram, what they do, and how often you've met */
+function paintCardHead(name){
+  const av = $("cardAvatar"), url = photoUrl(name), p = ROSTER.get(name);
+  av.innerHTML = url ? `<img alt="" src="${esc(url)}">` : esc(isPlaceholder(name) ? "?" : initials(name));
+  $("cardMeta").textContent = metaOf(p);
+  $("cardNote").textContent = p
+    ? [meetings(p.encounters || 0), p.enrolled_face ? "" : "no face yet"].filter(Boolean).join(", ")
+    : "";
+}
+function closeMenu(){ $("more").open = false; }
+/* Escape backs out of one thing at a time; sheets and alerts handle their own */
+document.addEventListener("keydown", e=>{
+  if(e.key !== "Escape" || document.querySelector("dialog[open]")) return;
+  if($("more").open) closeMenu();
+  else if($("answer").classList.contains("show")) closeAnswer();
+  else closePanel();
+});
+/* A click elsewhere closes the menu and whatever the ask field brought up. The
+   path is used, not contains(): a row that redraws its own list is no longer
+   in the document by the time the click gets here. */
+document.addEventListener("click", e=>{
+  const path = e.composedPath();
+  if(!path.includes($("more"))) closeMenu();
+  if(!path.includes($("dock"))) closeAnswer();
+});
+
+/* ---------- follow-ups ---------- */
+function fmtTime(ts){
+  if(!ts) return "";
+  const d = new Date(String(ts).replace(" ", "T"));
+  return isNaN(d.getTime()) ? String(ts)
+    : d.toLocaleString([], {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"});
+}
+/* the timeline only lists encounters, so the promises pulled out of each
+   ingest are kept here and shown alongside them */
+const PROMISES = [];
+function renderOwed(){
+  const ul = $("owed");
+  if(!PROMISES.length){ ul.innerHTML = '<li class="empty">No promises saved in this session.</li>'; return; }
+  ul.innerHTML = PROMISES.map(p=>
+    `<li><span>${esc(p.text)}</span><span class="when">${esc(p.who)}</span></li>`).join("");
+}
+/* newest first, each row like a message in Mail: who, when, then what */
+function renderTimeline(data){
+  const evs = arr(data && data.events);
+  const ul = $("timeline");
+  if(!evs.length){ ul.innerHTML = '<li class="empty">Nothing yet.</li>'; return; }
+  ul.innerHTML = evs.slice().reverse().map(ev=>{
+    /* "Ada Okafor - fintech, payments" is who, then what */
+    const parts = String((ev && ev.text) || "").split(" - ");
+    const who = parts.length > 1 ? parts[0] : parts[0] || "Meeting";
+    const what = parts.length > 1 ? parts.slice(1).join(" - ") : "";
+    return `<li><div class="rowtop"><span class="nm">${esc(who)}</span>`
+      + `<span class="when">${esc(fmtTime(ev && ev.ts))}</span></div>`
+      + (what ? `<span class="og">${esc(what)}</span>` : "") + `</li>`;
+  }).join("");
+}
+
+/* ---------- live updates ----------
+   The glasses write into the same graph while this is projected, so we re-read
+   every few seconds, diff against what's on screen, and only touch what moved. */
+const POLL_MS = 4000;
+let polling = false, pollTimer = null, seenOnce = false;
+const KNOWN_PEOPLE = new Set();     // names already on screen
+const KNOWN_EVENTS = new Set();     // ts|text of timeline rows already on screen
+let sigRoster = "", sigGraph = "", sigTimeline = "";
+
+function toast(msg, sub){
+  const wrap = $("toasts");
+  if(!wrap) return;
+  const el = document.createElement("div");
+  el.className = "toast glass strong";
+  el.innerHTML = `<div class="tmsg">${esc(msg)}</div>`
+    + (sub ? `<div class="tsub">${esc(sub)}</div>` : "");
+  wrap.appendChild(el);
+  while(wrap.children.length > 4) wrap.firstChild.remove();
+  setTimeout(()=>{ el.classList.add("out"); setTimeout(()=>el.remove(), 420); }, 4600);
+}
+function toggleLive(){
+  closeMenu();
+  LIVE = !LIVE;
+  $("pauseBtn").textContent = LIVE ? "Pause updates" : "Resume updates";
+  paintStatus();
+  if(LIVE) refresh({live:true}).catch(()=>{});
+}
+function tick(){
+  if(!LIVE || polling || document.hidden || dragging) return;
+  refresh({live:true}).catch(()=>{});
+}
+
+/* ---------- actions ---------- */
+async function refresh(opts){
+  opts = opts || {};
+  /* a poll in flight never blocks a user-triggered refresh — it just queues */
+  if(polling){
+    if(opts.live) return;
+    for(let i = 0; i < 120 && polling; i++) await new Promise(r=>setTimeout(r, 120));
+  }
+  polling = true;
+  try{
+    const [g, tl, ro] = await Promise.all([
+      call("graph", {}, opts.live ? 12000 : 45000).catch(()=>null),
+      call("timeline", {}, opts.live ? 12000 : 45000).catch(()=>null),
+      call("roster", {}, opts.live ? 12000 : 45000).catch(()=>null)
+    ]);
+    const announce = seenOnce;          // never toast the very first load
+    const joined = new Set();
+
+    if(ro){
+      const people = rosterPeople(ro);
+      /* photos can land after a person does, so the signature covers them too */
+      const sig = JSON.stringify(people.map(p=>[p.name, p.role, p.org, p.relationship,
+        p.encounters||0, p.enrolled_face?1:0, PHOTOS.has(p.name)?1:0]));
+      for(const p of people) if(!KNOWN_PEOPLE.has(p.name)) joined.add(p.name);
+      if(sig !== sigRoster){ sigRoster = sig; renderRoster(people, announce ? joined : new Set()); }
+      KNOWN_PEOPLE.clear();
+      for(const p of people) KNOWN_PEOPLE.add(p.name);
+      if(announce && joined.size){
+        const names = [...joined];
+        if(names.length <= 2) for(const n of names)
+          toast(n + " was added",
+                isPlaceholder(n) ? "Unrecognised face. Give them a name." : "");
+        else toast(names.length + " people were added", names.slice(0,3).join(", ") + "…");
+      }
+    }
+
+    if(g){
+      const sig = JSON.stringify([arr(g.nodes).map(n=>n && [n.id, n.label, n.kind, n.pulse?1:0]),
+                                  arr(g.links).map(l=>l && [l.source, l.target, l.kind])]);
+      if(sig !== sigGraph || !opts.live){
+        sigGraph = sig;
+        renderGraph(g, {live:!!opts.live, announce, changed:true});
+      }
+    }
+
+    if(tl){
+      const evs = arr(tl.events);
+      const sig = JSON.stringify(evs.map(e=>e && [e.ts, e.kind, e.text]));
+      const added = evs.filter(e=>e && !KNOWN_EVENTS.has((e.ts||"") + "|" + (e.text||"")));
+      if(sig !== sigTimeline){ sigTimeline = sig; renderTimeline(tl); }
+      KNOWN_EVENTS.clear();
+      for(const e of evs) if(e) KNOWN_EVENTS.add((e.ts||"") + "|" + (e.text||""));
+      if(announce && added.length){
+        /* "Ada Okafor - fintech, payments" → who / what */
+        const rows = added.slice(-2).map(e=>{
+          const parts = String(e.text || "").split(" - ");
+          const who = parts.length > 1 ? parts[0] : "";
+          return {who, what: parts.length > 1 ? parts.slice(1).join(" - ") : String(e.text || "")};
+        }).filter(r=>!joined.has(r.who));      // the join toast already covered them
+        for(const r of rows)
+          toast(r.who ? "New meeting with " + r.who : "New meeting", trunc(r.what, 74));
+      }
+    }
+    if(ro || g || tl) seenOnce = true;
+  }finally{ polling = false; }
+}
+async function seed(btn){
+  closeMenu();
+  btn.disabled = true;
+  try{ await call("seed", {}, 60000); await refresh(); }catch(e){ console.warn(e); }
+  btn.disabled = false;
+}
+/* deleting everything asks first, in an alert */
+function resetAll(){
+  closeMenu();
+  const dlg = $("confirmReset");
+  dlg.returnValue = "";
+  dlg.showModal();
+}
+async function reallyReset(){
+  try{
+    await call("reset", {}, 60000);
+    $("feed").innerHTML = '<div class="empty">Nothing saved yet.</div>';
+    $("answer").classList.remove("show");
+    PROMISES.length = 0; renderOwed();
+    closePanel();
+    PHOTOS.clear(); KNOWN_PEOPLE.clear(); KNOWN_EVENTS.clear();
+    sigRoster = sigGraph = sigTimeline = "";
+    await refresh();
+  }catch(e){ console.warn(e); }
+}
+
+/* ---------- boot ---------- */
+initGraph();
+setDetent("peek");
+$("confirmReset").addEventListener("close", e=>{
+  if(e.target.returnValue === "delete") reallyReset();
+});
+$("transcript").addEventListener("keydown", e=>{
+  if(e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); ingest(); }
+});
+refresh().catch(e=>console.warn("Backend unreachable", e));
+/* poll the backend so a person enrolled from the glasses shows up unattended */
+pollTimer = setInterval(tick, POLL_MS);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) tick(); });
+</script>
+</body>
+</html>

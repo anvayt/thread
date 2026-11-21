@@ -1,0 +1,84 @@
+name: Thread
+options:
+  bundleIdPrefix: com.threadglasses
+  deploymentTarget:
+    iOS: "26.0"
+
+packages:
+  MetaWearablesDAT:
+    url: https://github.com/facebook/meta-wearables-dat-ios
+    exactVersion: 1.1.0
+
+targets:
+  Thread:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    dependencies:
+      - package: MetaWearablesDAT
+        product: MWDATCore
+      - package: MetaWearablesDAT
+        product: MWDATCamera
+      - package: MetaWearablesDAT
+        product: MWDATDisplay
+      # The glasses' buttons (capture button, double tap on the temple).
+      - package: MetaWearablesDAT
+        product: MWDATInputs
+      # Simulated glasses, used only by Sources/SimulatedGlasses.swift in
+      # debug builds.
+      - package: MetaWearablesDAT
+        product: MWDATMockDevice
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.threadglasses.app
+        # The app is called Thread, but its code module is not: a module named
+        # Thread would clash with Foundation's Thread class.
+        PRODUCT_MODULE_NAME: ThreadGlasses
+        # Your Apple Developer Team ID. Leave empty and pick your team in
+        # Xcode (target → Signing & Capabilities), or fill it in here.
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: Thread
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSCameraUsageDescription: Thread captures one frame at a time to recognise who you're talking to — from your glasses, or the iPhone camera when they aren't connected.
+        NSMicrophoneUsageDescription: Thread listens for a few seconds after you tap Meet (or while you hold Listen) so it can turn an introduction into a contact in your network graph.
+        NSSpeechRecognitionUsageDescription: Thread transcribes those few seconds on your phone so the graph can pull out names, companies and follow-ups.
+        NSBluetoothAlwaysUsageDescription: Needed to connect to your Meta glasses.
+        NSLocalNetworkUsageDescription: Lets your phone talk to your glasses, and to the Thread backend running on your computer, over Wi-Fi.
+        NSBonjourServices: [_bonjour._tcp]
+        # This protocol, with `external-accessory` in the background modes
+        # below, makes the Meta SDK stream the camera over Bluetooth Classic.
+        # Without them it streams over Wi-Fi, which needs the Hotspot
+        # Configuration capability, and a free Apple Account cannot sign
+        # that. Remove both only on a paid team, and add the capability.
+        UISupportedExternalAccessoryProtocols: [com.meta.ar.wearable]
+        # `audio` keeps the shared AVAudioSession (and therefore live
+        # transcription) alive across a hop into the Meta AI app mid-demo.
+        UIBackgroundModes: [audio, processing, bluetooth-central, bluetooth-peripheral, external-accessory]
+        LSApplicationQueriesSchemes: [fb-viewapp]
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.threadglasses.app
+            CFBundleURLSchemes: [threadglasses]
+        MWDAT:
+          AppLinkURLScheme: "threadglasses://"
+          # "0" with nothing else is how Meta's own sample sets up an app for
+          # Developer Mode in the Meta AI app. A published app needs its own
+          # MetaAppID, ClientToken and TeamID from Wearables Developer Center;
+          # an empty ClientToken here makes the Meta AI app refuse to register.
+          MetaAppID: "0"
+    entitlements:
+      path: Thread.entitlements
+      properties:
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)com.threadglasses.app

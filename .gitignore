@@ -1,0 +1,14 @@
+xcuserdata/
+*.xcuserstate
+.DS_Store
+build/
+DerivedData/
+
+# Local tool caches; these record paths on this machine.
+.impeccable/
+
+# A list of downloads on this machine that can be deleted later.
+LOCAL_CLEANUP.md
+
+# Transcripts of earlier chats, kept on this machine only.
+chats/

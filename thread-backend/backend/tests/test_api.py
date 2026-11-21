@@ -1,0 +1,631 @@
+"""The HTTP endpoints, run against a real (temporary) database.
+
+Deliberately covers the logic that is easy to break rather than the parts
+never in doubt: name resolution, seeding twice, the face/conversation join,
+the deterministic caption path, and what happens without a language model.
+"""
+
+from conftest import NOT_AN_IMAGE, REAL_TASKS
+
+from server import faces, llm
+from server.store import Interaction, Person, session
+
+
+def names(api) -> list[str]:
+    return [p["name"] for p in api("roster")["people"]]
+
+
+def add_person(**fields) -> Person:
+    with session() as db:
+        return db.add_person(Person(**fields))
+
+
+def add_interaction(person: Person, **fields) -> None:
+    with session() as db:
+        db.add_interaction(person.id, Interaction(**fields))
+
+
+# ------------------------------------------------------------------ seeding
+
+
+def test_seed_populates_an_empty_store(api):
+    got = api("seed")
+    assert got["seeded"] is True
+    assert got["people"] == 3
+    assert got["things"] == 2
+    assert {"Sarah Chen", "Marcus Webb", "Priya Raman"} <= set(names(api))
+
+
+def test_seed_is_idempotent_pressing_it_twice_does_not_duplicate_everyone(api):
+    api("seed")
+    before = names(api)
+    again = api("seed")
+    api("seed")
+    assert again["added"] == []
+    assert names(api) == before
+
+
+def test_seeded_people_carry_the_context_the_cards_are_built_from(api, db):
+    api("seed")
+    marcus = next(p for p in db.people() if p.name == "Marcus Webb")
+    assert marcus.org == "Northwind"
+    assert marcus.role != ""
+    assert marcus.last_interaction != ""
+
+
+def test_seeded_people_carry_the_weights_recognition_scores_with(api, db):
+    api("seed")
+    people = db.people()
+    assert len(people) >= 3
+    for p in people:
+        assert 0.0 <= p.closeness <= 1.0
+        assert 0.0 <= p.recency <= 1.0
+
+
+def test_reset_empties_everything(api):
+    api("seed")
+    assert api("reset")["cleared"] == 5
+    roster = api("roster")
+    assert roster["people"] == []
+    assert roster["things"] == []
+
+
+# ------------------------------------------------------------- enrol / faces
+
+
+def test_enroll_reports_a_miss_when_no_face_is_present_and_stores_nothing(api):
+    got = api("enroll", {"name": "Faceless", "frame_b64": NOT_AN_IMAGE})
+    assert got["enrolled"] is False
+    assert "no face" in got["reason"]
+    assert "Faceless" not in names(api)
+
+
+def test_enroll_needs_a_name(api):
+    got = api("enroll", {"name": "  ", "frame_b64": NOT_AN_IMAGE})
+    assert got["enrolled"] is False
+
+
+def test_enroll_ignores_extra_fields_a_client_sends(api):
+    got = api(
+        "enroll", {"name": "Faceless", "frame_b64": NOT_AN_IMAGE, "photo_b64": NOT_AN_IMAGE}
+    )
+    assert got["enrolled"] is False
+
+
+def test_enroll_attaches_a_face_to_the_person_a_conversation_created(api, fake, monkeypatch):
+    # The join the whole product rests on: the conversation is filed first,
+    # the face arrives later under a shorter name, and both must end up on
+    # one record.
+    fake.contact = llm.ContactInfo(
+        name="Dana Okafor", org="Lumen", interests=[], followups=[], topics=["robotics"]
+    )
+    api("ingest", {"transcript": "Hi, I'm Dana Okafor from Lumen."})
+
+    monkeypatch.setattr(faces, "embed_face", lambda _frame: [0.1] * 128)
+    got = api("enroll", {"name": "dana", "frame_b64": "frame", "role": "CTO"})
+
+    assert got["enrolled"] is True
+    assert got["name"] == "Dana Okafor"
+    assert got["attached_to_existing"] is True
+    assert got["known_interactions"] == 1
+    assert got["dims"] == 128
+
+    roster = api("roster")["people"]
+    assert len(roster) == 1
+    assert roster[0]["enrolled_face"] is True
+    assert roster[0]["role"] == "CTO"
+    assert roster[0]["org"] == "Lumen", "enrolling must not blank what the conversation captured"
+
+
+def test_enroll_creates_a_new_person_when_nobody_matches(api, monkeypatch):
+    monkeypatch.setattr(faces, "embed_face", lambda _frame: [0.2] * 128)
+    got = api("enroll", {"name": "New Face", "frame_b64": "frame", "org": "Initech"})
+    assert got["enrolled"] is True
+    assert got["attached_to_existing"] is False
+    assert got["known_interactions"] == 0
+    assert names(api) == ["New Face"]
+
+
+def test_roster_exposes_photo_and_face_status_so_clients_can_render_a_face(api):
+    api("seed")
+    people = api("roster")["people"]
+    assert people
+    for p in people:
+        assert "photo_b64" in p
+        assert p["enrolled_face"] is False
+        assert p["encounters"] == 0
+
+
+def test_recognize_stays_silent_and_records_nothing_for_a_stranger(api, monkeypatch):
+    add_person(name="Sarah Chen", face_vec=[1.0, 0.0, 0.0])
+    monkeypatch.setattr(faces, "embed_face", lambda _frame: [0.0, 1.0, 0.0])
+
+    got = api("recognize", {"frame_b64": "frame"})
+
+    assert got["matched"] is False
+    assert got["spoken"] == ""
+    assert "name" not in got
+    assert api("timeline")["events"] == []
+
+
+def test_recognize_with_no_face_in_frame_is_a_quiet_miss(api):
+    api("seed")
+    got = api("recognize", {"frame_b64": NOT_AN_IMAGE})
+    assert got["matched"] is False
+    assert got["score"] == 0.0
+
+
+def test_recognize_names_a_known_face_and_logs_the_sighting(api, fake, monkeypatch):
+    sarah = add_person(name="Sarah Chen", org="Acme", role="VP Product", face_vec=[1.0, 0.0])
+    add_person(name="Marcus Webb", face_vec=[0.0, 1.0])
+    add_interaction(sarah, timestamp="2026-01-01 09:00:00", summary="pricing", kind="conversation")
+    monkeypatch.setattr(faces, "embed_face", lambda _frame: [0.9, 0.1])
+    fake.line = "Sarah still has a pricing question."
+
+    got = api("recognize", {"frame_b64": "frame"})
+
+    assert got["matched"] is True
+    assert got["name"] == "Sarah Chen"
+    assert got["org"] == "Acme"
+    assert got["spoken"] == "Sarah still has a pricing question."
+    assert got["score"] > faces.FACE_THRESHOLD
+    # The whisper was written from what was actually said last time.
+    assert "pricing" in fake.calls[0][1][-1]
+    events = api("timeline")["events"]
+    assert len(events) == 2
+    assert "whispered: Sarah still has a pricing question." in events[-1]["text"]
+
+
+def test_recognize_prefers_the_closer_tie_when_two_faces_score_alike(api, fake, monkeypatch):
+    add_person(name="Faint Acquaintance", face_vec=[1.0, 0.0], closeness=0.0, recency=0.0)
+    add_person(name="Close Friend", face_vec=[1.0, 0.0], closeness=1.0, recency=1.0)
+    monkeypatch.setattr(faces, "embed_face", lambda _frame: [1.0, 0.0])
+    assert api("recognize", {"frame_b64": "frame"})["name"] == "Close Friend"
+
+
+def test_recognize_still_names_the_person_when_the_language_model_is_down(api, monkeypatch):
+    add_person(name="Sarah Chen", face_vec=[1.0, 0.0])
+    monkeypatch.setattr(faces, "embed_face", lambda _frame: [1.0, 0.0])
+
+    def down(*_args):
+        raise llm.LLMError("unreachable")
+
+    monkeypatch.setattr(llm, "compose", down)
+    got = api("recognize", {"frame_b64": "frame"})
+
+    assert got["matched"] is True
+    assert got["name"] == "Sarah Chen"
+    assert got["spoken"] == ""
+    assert api("timeline")["events"][0]["text"] == "Sarah Chen - Recognised in frame"
+
+
+def test_glance_shapes_the_same_match_for_a_lens(api, fake, monkeypatch):
+    add_person(name="Sarah Chen", face_vec=[1.0, 0.0])
+    monkeypatch.setattr(faces, "embed_face", lambda _frame: [1.0, 0.0])
+    got = api("glance", {"image_b64": "frame"})
+    assert got["matched"] == "Sarah Chen"
+    assert got["whisper"]["kind"] == "recognition"
+    assert got["whisper"]["text"] == fake.line
+
+    monkeypatch.setattr(faces, "embed_face", lambda _frame: [])
+    missed = api("glance", {"image_b64": "frame"})
+    assert missed["matched"] == ""
+    assert missed["whisper"] == {"text": "", "kind": "reassurance", "confidence": 0.0}
+
+
+# ------------------------------------------------------------- conversations
+
+
+def test_ingest_files_a_conversation_under_the_person_who_introduced_themselves(api, fake):
+    fake.contact = llm.ContactInfo(
+        name="Dana Okafor", role="CTO", org="Lumen",
+        interests=["robotics"], followups=["send the deck"], topics=["robotics", "hiring"],
+    )  # fmt: skip
+    got = api("ingest", {"transcript": "Hi, I'm Dana, CTO at Lumen."})
+
+    assert got["saved"] == "Dana Okafor"
+    assert got["new_person"] is True
+    assert got["org"] == "Lumen"
+    assert got["role"] == "CTO"
+    assert got["topics"] == ["robotics", "hiring"]
+    assert got["new_topics"] == ["robotics", "hiring"]
+    assert got["followups"] == ["send the deck"]
+
+    person = api("roster")["people"][0]
+    assert person["relationship"] == "met at an event"
+    assert person["encounters"] == 1
+    assert api("timeline")["events"][0]["text"] == "Dana Okafor - robotics, hiring"
+
+
+def test_ingest_never_files_the_wearer_as_the_contact(api, fake):
+    fake.contact = llm.ContactInfo(
+        name="Sam Rivera", org="", interests=[], followups=[], topics=["design"],
+    )  # fmt: skip
+    got = api("ingest", {"transcript": "Hi, I'm Sam.", "wearer": "Sam Rivera"})
+
+    assert got["saved"] == ""
+    assert names(api) == []
+    assert fake.calls[-1] == ("extract_contact", ("Hi, I'm Sam.", "Sam Rivera"))
+
+
+def test_ingest_without_a_wearer_is_unchanged(api, fake):
+    fake.contact = llm.ContactInfo(
+        name="Sam Rivera", org="", interests=[], followups=[], topics=[],
+    )  # fmt: skip
+    got = api("ingest", {"transcript": "Hi, I'm Sam."})
+
+    assert got["saved"] == "Sam Rivera"
+    assert fake.calls[-1] == ("extract_contact", ("Hi, I'm Sam.",))
+
+
+def test_ingest_lands_a_first_name_on_the_existing_person(api, fake):
+    api("seed")
+    fake.contact = llm.ContactInfo(
+        name="Sarah", org="Somewhere Else", interests=["climbing"],
+        followups=[], topics=["Series B"],
+    )  # fmt: skip
+    got = api("ingest", {"transcript": "It's Sarah again."})
+
+    assert got["saved"] == "Sarah Chen"
+    assert got["new_person"] is False
+    assert got["org"] == "Acme", "an org already on record is not overwritten"
+    assert len(names(api)) == 3
+
+
+def test_ingest_does_not_repeat_topics_interests_or_followups(api, fake):
+    fake.contact = llm.ContactInfo(
+        name="Dana Okafor", org="", interests=["robotics"],
+        followups=["send the deck"], topics=["Robotics", "hiring"],
+    )  # fmt: skip
+    api("ingest", {"transcript": "one"})
+    fake.contact = llm.ContactInfo(
+        name="Dana Okafor", org="", interests=["robotics", "sailing"],
+        followups=["send the deck"], topics=["robotics", "funding"],
+    )  # fmt: skip
+    second = api("ingest", {"transcript": "two"})
+
+    assert second["new_topics"] == ["funding"]
+    assert second["followups"] == ["send the deck"]
+    topic_nodes = [n["label"] for n in api("graph")["nodes"] if n["kind"] == "topic"]
+    assert topic_nodes == ["Robotics", "hiring", "funding"]
+
+
+def test_ingest_prefers_an_explicit_speaker_over_a_name_the_model_heard(api, fake):
+    api("seed")
+    fake.contact = llm.ContactInfo(
+        name="Sarah", org="", interests=[], followups=[], topics=["migration"]
+    )
+    got = api("ingest", {"transcript": "Sarah said hi.", "speaker": "Marcus Webb"})
+    assert got["saved"] == "Marcus Webb"
+
+
+def test_ingest_refuses_to_guess_a_name_and_stores_nothing(api, fake):
+    got = api("ingest", {"transcript": "Nice weather today."})
+    assert got["saved"] == ""
+    assert "not guessing" in got["reason"]
+    assert names(api) == []
+
+
+def test_ingest_without_topics_still_records_that_a_conversation_happened(api, fake):
+    fake.contact = llm.ContactInfo(name="Dana", org="", interests=[], followups=[], topics=[])
+    api("ingest", {"transcript": "I'm Dana."})
+    assert api("timeline")["events"][0]["text"] == "Dana - a conversation"
+
+
+# ------------------------------------------------------------------- lookup
+
+
+def test_lookup_reports_not_found_rather_than_inventing_a_person(api):
+    got = api("lookup", {"name": "Nobody Ever Met This Person"})
+    assert got["found"] is False
+
+
+def test_lookup_last_on_an_empty_store_finds_nobody(api):
+    assert api("lookup")["found"] is False
+
+
+def test_lookup_builds_a_card_once_then_serves_it_from_the_cache(api, fake):
+    api("seed")
+    fake.card = llm.Card(headline="Sarah Chen, Acme", lines=["Ask about pricing tiers"])
+
+    first = api("lookup", {"name": "sarah"})
+    second = api("lookup", {"name": "sarah"})
+
+    assert first["found"] is True
+    assert first["cached"] is False
+    assert first["name"] == "Sarah Chen"
+    assert first["headline"] == "Sarah Chen, Acme"
+    assert first["lines"] == ["Ask about pricing tiers"]
+    assert second["cached"] is True
+    assert second["lines"] == first["lines"]
+    assert fake.count("lookup_card") == 1
+
+
+def test_lookup_rebuilds_the_card_when_something_new_is_learned(api, fake):
+    api("seed")
+    api("lookup", {"name": "Sarah"})
+    fake.contact = llm.ContactInfo(
+        name="Sarah Chen", org="", interests=[], followups=["intro to Priya"], topics=["pricing"]
+    )
+    api("ingest", {"transcript": "..."})
+
+    got = api("lookup", {"name": "Sarah"})
+
+    assert got["cached"] is False
+    assert fake.count("lookup_card") == 2
+    assert got["topics"] == ["pricing"]
+    assert got["followups"] == ["intro to Priya"]
+    assert got["history"][-1]["kind"] == "conversation"
+    assert got["history"][-1]["what"] == "pricing"
+
+
+def test_lookup_last_returns_whoever_was_interacted_with_most_recently(api, fake):
+    api("seed")
+    with session() as db:
+        by_name = {p.name: p for p in db.people()}
+    add_interaction(by_name["Priya Raman"], timestamp="2026-03-01 10:00:00", summary="older")
+    add_interaction(by_name["Marcus Webb"], timestamp="2026-03-02 10:00:00", summary="newer")
+    assert api("lookup", {"name": "last"})["name"] == "Marcus Webb"
+    assert api("lookup")["name"] == "Marcus Webb"
+
+
+def test_person_card_is_markdown_with_the_heading_the_lens_reads(api, fake):
+    fake.contact = llm.ContactInfo(
+        name="Dana Okafor", org="Lumen", interests=[],
+        followups=["send the deck"], topics=["robotics"],
+    )  # fmt: skip
+    api("ingest", {"transcript": "..."})
+    fake.card = llm.Card(headline="Dana Okafor, Lumen", lines=["Ask about the robot arm"])
+
+    got = api("person_card", {"name": "dana"})
+
+    assert got["name"] == "Dana Okafor"
+    md = got["md"]
+    assert md.startswith("# Dana Okafor\n\n*Lumen*\n\n> Dana Okafor, Lumen\n\n")
+    assert "## Things to ask about\n- Ask about the robot arm\n" in md
+    assert "\n## Discussed\nrobotics\n" in md
+    assert "\n## You owe them\n- send the deck\n" in md
+    assert "\n## History\n- `" in md
+
+
+def test_person_card_shares_the_cache_with_lookup_unless_refreshed(api, fake):
+    api("seed")
+    api("lookup", {"name": "Sarah"})
+    api("person_card", {"name": "Sarah"})
+    assert fake.count("lookup_card") == 1
+    api("person_card", {"name": "Sarah", "refresh": True})
+    assert fake.count("lookup_card") == 2
+
+
+def test_person_card_for_an_unknown_name_says_so(api):
+    got = api("person_card", {"name": "Nobody"})
+    assert got["md"].startswith("**Nobody** is not in")
+
+
+# -------------------------------------------------------------------- query
+
+
+def test_query_on_an_empty_store_returns_no_matches_rather_than_guessing(api):
+    got = api("query", {"question": ""})
+    assert got["matches"] == []
+
+
+def test_query_with_an_empty_question_asks_nobody(api):
+    api("seed")
+    got = api("query", {"question": "   "})
+    assert got["matches"] == []
+    assert got["searched"] == 3
+
+
+def test_query_gives_the_model_the_roster_and_reports_who_it_picked(api, fake):
+    api("seed")
+    fake.matches = llm.Matches(names=["Priya Raman"], reason="Priya is the investor.")
+
+    got = api("query", {"question": "who invests?"})
+
+    assert got["matches"] == [
+        {"name": "Priya Raman", "org": "Fieldstone Capital",
+         "last": "brief hallway chat about the seed round"}
+    ]  # fmt: skip
+    assert got["reason"] == "Priya is the investor."
+    assert got["searched"] == 3
+    question, roster = fake.calls[0][1]
+    assert question == "who invests?"
+    assert "Marcus Webb | Engineering Lead | Northwind |" in roster
+
+
+def test_query_never_reports_a_person_who_is_not_on_record(api, fake):
+    api("seed")
+    fake.matches = llm.Matches(names=["Quinn Halloway", "Sarah Chen"], reason="r")
+    got = api("query", {"question": "who?"})
+    assert [m["name"] for m in got["matches"]] == ["Sarah Chen"]
+
+
+def test_query_forgives_a_mistyped_name_only_when_it_is_unambiguous(api, fake):
+    api("seed")
+    add_person(name="Sarah Kim")
+
+    # "Priva Raman" shares exactly one whole word with exactly one person.
+    fake.matches = llm.Matches(names=["Priva Raman"], reason="r")
+    assert [m["name"] for m in api("query", {"question": "q"})["matches"]] == ["Priya Raman"]
+
+    # "Sarah Lopez" shares a word with two people - never a guess.
+    fake.matches = llm.Matches(names=["Sarah Lopez"], reason="r")
+    assert api("query", {"question": "q"})["matches"] == []
+
+
+def test_query_lists_a_person_once_even_if_picked_twice(api, fake):
+    api("seed")
+    fake.matches = llm.Matches(names=["Marcus Webb", "Marcus", "Webb"], reason="r")
+    assert len(api("query", {"question": "q"})["matches"]) == 1
+
+
+# ---------------------------------------------------------------- dashboard
+
+
+def test_graph_emits_nodes_and_links_the_dashboard_can_draw(api, fake):
+    api("seed")
+    fake.contact = llm.ContactInfo(
+        name="Sarah Chen", org="", interests=[], followups=[], topics=["pricing"]
+    )
+    api("ingest", {"transcript": "..."})
+
+    got = api("graph")
+    nodes, links = got["nodes"], got["links"]
+
+    assert {n["kind"] for n in nodes} == {"person", "encounter", "topic", "object"}
+    ids = [n["id"] for n in nodes]
+    assert len(ids) == len(set(ids)), "node ids must be unique"
+    for n in nodes:
+        assert n["label"]
+    assert {link["kind"] for link in links} == {"had", "discussed"}
+    for link in links:
+        assert link["source"] in ids and link["target"] in ids
+
+
+def test_timeline_is_ordered_oldest_first(api):
+    late = add_person(name="Late")
+    early = add_person(name="Early")
+    add_interaction(late, timestamp="2026-05-02 10:00:00", summary="second")
+    add_interaction(early, timestamp="2026-05-01 10:00:00", summary="first")
+
+    events = api("timeline")["events"]
+
+    assert [e["text"] for e in events] == ["Early - first", "Late - second"]
+    assert all(e["kind"] == "encounter" for e in events)
+
+
+def test_the_dashboard_page_is_served_at_the_root(api):
+    response = api.client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+
+
+def test_the_dashboard_is_always_rechecked_with_the_server(api):
+    # Without this a browser may keep showing an older saved copy of the page.
+    assert api.client.get("/").headers["cache-control"] == "no-cache"
+
+
+# ----------------------------------------------------------------- captions
+
+
+def test_caption_returns_empty_for_empty_input_and_never_calls_a_model(api):
+    assert api("caption", {"text": "   ", "lang": "en"})["display_text"] == ""
+
+
+def test_caption_tidies_a_short_fragment_deterministically(api):
+    # Under three words never goes to a model, so this is exact.
+    assert api("caption", {"text": "hello", "lang": "en"})["display_text"] == "Hello."
+    assert api("caption", {"text": "test"})["display_text"] == "Test."
+    assert api("caption", {"text": "ok", "lang": "en"})["display_text"] == "Ok."
+
+
+def test_caption_keeps_punctuation_a_fragment_already_has(api):
+    assert api("caption", {"text": "hello!", "lang": "en"})["display_text"] == "Hello!"
+
+
+def test_caption_never_leaks_prompt_text_into_a_caption(api):
+    leaks = ["captured speech", "speech-to-text", "I need actual input", "provide the"]
+    for probe in ["hello", "ok", "hey there"]:
+        shown = api("caption", {"text": probe, "lang": "en"})["display_text"]
+        for bad in leaks:
+            assert bad.lower() not in shown.lower(), f"leaked prompt text for {probe!r}: {shown!r}"
+
+
+def test_caption_sends_longer_speech_and_translations_to_the_model(api, fake):
+    fake.caption_text = "So, the launch went well."
+    got = api("caption", {"text": "so um the launch went uh well", "lang": "en"})
+    assert got["display_text"] == "So, the launch went well."
+
+    fake.caption_text = "Hola."
+    assert api("caption", {"text": "hello", "lang": "es"})["display_text"] == "Hola."
+    assert fake.calls[-1] == ("caption_line", ("hello", "es"))
+
+
+# --------------------------------------------------------------- forgetting
+
+
+def test_forget_removes_a_person_and_everything_attached_to_them(api, fake):
+    api("seed")
+    fake.contact = llm.ContactInfo(
+        name="Temporary Contact", org="", interests=[], followups=[], topics=["a chat"]
+    )
+    api("ingest", {"transcript": "..."})
+    assert "Temporary Contact" in names(api)
+
+    got = api("forget", {"name": "Temporary Contact"})
+
+    assert got["forgotten"] == 1
+    assert "Temporary Contact" not in names(api)
+    assert len(names(api)) == 3
+    assert api("timeline")["events"] == []
+    assert not [n for n in api("graph")["nodes"] if n["kind"] in ("encounter", "topic")]
+
+
+def test_forget_on_an_unknown_name_removes_nothing(api):
+    api("seed")
+    got = api("forget", {"name": "Never Existed"})
+    assert got["forgotten"] == 0
+    assert len(names(api)) == 3
+
+
+def test_forget_with_an_empty_name_removes_nobody(api):
+    api("seed")
+    assert api("forget", {"name": "  "})["forgotten"] == 0
+    assert len(names(api)) == 3
+
+
+# ------------------------------------------------------------------- errors
+
+
+def test_a_missing_field_is_reported_in_the_error_envelope(api):
+    response = api.raw("recognize", {})
+    assert response.status_code == 422
+    body = response.json()
+    assert body["ok"] is False
+    assert "frame_b64" in body["error"]
+
+
+def test_an_unknown_endpoint_is_reported_in_the_error_envelope(api):
+    response = api.raw("no_such_thing")
+    assert response.status_code == 404
+    assert response.json()["ok"] is False
+
+
+def test_a_language_model_outage_is_reported_not_crashed_on(api, monkeypatch):
+    api("seed")
+
+    def down(*_args):
+        raise llm.LLMError("The language model request failed: timeout")
+
+    monkeypatch.setattr(llm, "lookup_card", down)
+    response = api.raw("lookup", {"name": "Sarah"})
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "ok": False,
+        "error": "The language model request failed: timeout",
+    }
+
+
+def test_without_an_api_key_the_error_says_what_to_do(api, monkeypatch):
+    # The real client code, not a stand-in: no key is configured in tests, and
+    # NVIDIA's hosted API needs one, so the request is never sent.
+    monkeypatch.setenv("LLM_BASE_URL", "https://integrate.api.nvidia.com/v1")
+    monkeypatch.setattr(llm, "caption_line", REAL_TASKS["caption_line"])
+    response = api.raw("caption", {"text": "a sentence long enough to need the model"})
+    assert response.status_code == 503
+    assert "LLM_API_KEY" in response.json()["error"]
+
+
+def test_an_unexpected_failure_does_not_leak_details(api, monkeypatch):
+    def boom(_frame):
+        raise RuntimeError("secret internal detail")
+
+    monkeypatch.setattr(faces, "embed_face", boom)
+    response = api.raw("recognize", {"frame_b64": "frame"})
+
+    assert response.status_code == 500
+    body = response.json()
+    assert body["ok"] is False
+    assert "secret" not in body["error"]
