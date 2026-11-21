@@ -85,8 +85,15 @@ class Network:
         return set().union(*(k.subjects() for k in self.people)) if self.people else set()
 
 
-# Words too common to link two topics ("payments for" and "for robotics").
-_FILLER = {"about", "with", "from", "into", "their", "this", "that", "your", "over"}
+# Words too common to link two topics on their own: "embedded systems" and
+# "distributed systems" have nothing in common worth an introduction, and
+# nor do "hiring ML interns" and "hiring backend interns".
+_FILLER = {
+    "about", "with", "from", "into", "their", "this", "that", "your", "over",
+    "system", "systems", "intern", "interns", "internship", "internships",
+    "hiring", "team", "teams", "role", "roles", "work", "working", "project",
+    "projects", "things", "stuff", "general",
+}  # fmt: skip
 
 
 def _key_words(subject: str) -> set[str]:
@@ -144,10 +151,12 @@ def follow_ups(people: list[Known]) -> str:
     for k in people:
         for f in k.person.followups:
             groups[owed_by(f)].append(f"- {k.name}: {f}")
+    # Headed in the words a question uses ("who do I owe?"), which the model
+    # maps onto far more reliably than "what you said you'd do".
     titles = {
-        "you": "What you said you'd do, and for whom:",
-        "them": "What others said they'd do for you:",
-        "": "Follow-ups where it isn't clear who said them:",
+        "you": "You owe these people (you said you'd do it):",
+        "them": "These people owe you (they said they'd do it for you):",
+        "": "Follow-ups where it isn't clear who owes whom:",
     }
     parts = [titles[g] + "\n" + "\n".join(lines) for g, lines in groups.items() if lines]
     return "\n".join(parts)
@@ -423,8 +432,11 @@ a meeting or a fact. If nothing fits, say so.
 - Suggest connecting two people only from "Who shares what" or what a tool shows \
 they share. Say what links them, and include the link in `answer`. Don't \
 speculate about links the record doesn't show.
-- Follow-ups are grouped by who said they'd do them. "What you said you'd do" is \
-the wearer's; "What others said they'd do for you" is theirs. Keep to that.
+- Follow-ups are grouped by who owes them: "You owe these people" are the \
+wearer's to do; "These people owe you" are the other person's. Keep to that, and \
+never move a follow-up from one person to another.
+- Before saying what someone said, promised or talked about, read their page \
+with `person`. Only quote or attribute what is on that person's own page.
 - One to three short sentences, spoken to the wearer as "you"."""
 
 

@@ -88,7 +88,7 @@ def test_find_people_searches_topics_promises_and_meetings(net):
 def test_person_gives_their_page_with_meetings_newest_first(net):
     page = agent.person(net, "Sarah")
     assert page.splitlines()[0] == "Sarah Chen (VP Product, Acme)"
-    assert "Follow-ups where it isn't clear who said them:\n- Sarah Chen: send the metrics deck" in page
+    assert "Follow-ups where it isn't clear who owes whom:\n- Sarah Chen: send the metrics deck" in page
     assert page.index("hallway hello") < page.index("coffee about pricing")
     assert "Last conversation, as heard: We should talk about embedded payments." in page
     assert agent.person(net, "Quinn") == "Nobody called “Quinn” is on record."
@@ -120,7 +120,7 @@ def test_recent_meetings_are_newest_first_and_the_limit_is_kept_in_range(net):
 
 def test_follow_ups_are_listed_by_person_without_saying_who_owes_them(net):
     assert agent.promises(net) == (
-        "Follow-ups where it isn't clear who said them:\n- Sarah Chen: send the metrics deck"
+        "Follow-ups where it isn't clear who owes whom:\n- Sarah Chen: send the metrics deck"
     )
 
 
@@ -132,8 +132,8 @@ def test_follow_ups_are_grouped_by_who_owes_them(net):
         db.save_person(lena)
         bigger = agent.Network.load(db)
     got = agent.promises(bigger)
-    assert "What you said you'd do, and for whom:\n- Lena: send them the repo link" in got
-    assert "What others said they'd do for you:\n- Omar: send you our demo video" in got
+    assert "You owe these people (you said you'd do it):\n- Lena: send them the repo link" in got
+    assert "These people owe you (they said they'd do it for you):\n- Omar: send you our demo video" in got
 
 
 def test_the_outline_carries_follow_ups_so_they_are_never_guessed(net):
@@ -323,3 +323,9 @@ def test_a_long_answer_is_cut_at_a_sentence(net, fake):
 def test_a_numbered_list_is_not_cut_after_its_number(net, fake):
     fake.turns = [answer("Two pairs. 1. Sarah and Dana. 2. Omar and Sarah.", [])]
     assert agent.ask(net, "Who?").text == "Two pairs. 1. Sarah and Dana. 2. Omar and Sarah."
+
+
+def test_generic_words_are_not_common_ground():
+    a = agent.Known(Person(name="Jonah", id=1), ["embedded systems", "hiring ml interns"], [])
+    b = agent.Known(Person(name="Priscilla", id=2), ["distributed systems", "hiring backend interns"], [])
+    assert agent.common(a, b) == []

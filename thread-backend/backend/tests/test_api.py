@@ -122,7 +122,7 @@ def test_the_seed_has_answers_to_the_questions_the_map_suggests(api, db):
     assert "Tobias Hale" in robotics and "Jonah Bergstrom" in robotics
     assert "Renata" not in robotics
     # "Who do I owe a follow-up?"
-    mine, theirs = agent.promises(net).split("What others said they'd do for you:")
+    mine, theirs = agent.promises(net).split("These people owe you (they said they'd do it for you):")
     assert mine.count("\n- ") == 3 and "Renata Okoye" in mine and "Tobias" not in mine
     assert "Tobias Hale" in theirs and "Priscilla Tan" in theirs
 
