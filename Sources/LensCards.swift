@@ -103,14 +103,11 @@ final class LensCards: ObservableObject {
         }
     }
 
-    /// The wordmark on the lens. The Display DSL has no per-run styling
-    /// inside a single Text, so the brand's two-tone ghost is approximated
-    /// with two runs on one row — `call` in the dim secondary color, `back` in
-    /// the primary. That matches the hardware variant's heavier ghost.
+    /// The wordmark on the lens: `thread`, lowercase and in one weight, as
+    /// the brand draws it.
     private func wordmarkRow() -> FlexBox {
         FlexBox(direction: .row, spacing: 0) {
-            Text("call", style: .meta, color: .secondary)
-            Text("back", style: .meta)
+            Text("thread", style: .meta)
         }
     }
 

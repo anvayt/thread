@@ -69,8 +69,32 @@ def _delight(img):
     return cv2.cvtColor(cv2.merge((equalised, a, b)), cv2.COLOR_LAB2BGR)
 
 
+# A face must be at least this share of the largest face's area to be
+# picked, so a small face in the background never wins just by being central.
+MIN_FACE_SHARE = 0.25
+
+
+def pick_face(boxes, width: int, height: int):
+    """The face of the person being talked to: of the faces not much smaller
+    than the largest, the one nearest the middle of the frame.
+
+    The wearer faces whoever they are talking to, through the glasses or the
+    phone, so that person is in the middle. The largest face is not a safe
+    choice: a bystander nearer the camera can have a bigger face than the
+    person a step further away who is actually talking."""
+    areas = [float(b[2]) * float(b[3]) for b in boxes]
+    floor = max(areas) * MIN_FACE_SHARE
+
+    def off_centre(box) -> float:
+        x, y, w, h = (float(v) for v in box[:4])
+        return ((x + w / 2) / width - 0.5) ** 2 + ((y + h / 2) / height - 0.5) ** 2
+
+    return min((b for b, a in zip(boxes, areas) if a >= floor), key=off_centre)
+
+
 def embed_face(jpeg_b64: str) -> list[float]:
-    """A 128-d embedding for the largest face in the frame, or [] if none.
+    """A 128-d embedding for the face of the person being talked to (see
+    pick_face), or [] if there is no face.
 
     Anything that is not a readable image also yields [] rather than raising:
     callers treat an empty vector as "say nothing", which is the safe answer.
@@ -88,8 +112,7 @@ def embed_face(jpeg_b64: str) -> list[float]:
         if faces is None or len(faces) == 0:
             return []
 
-        # Largest face wins - the wearer is looking at whoever is closest.
-        best = max(faces, key=lambda box: float(box[2]) * float(box[3]))
+        best = pick_face(faces, width, height)
 
         recognizer = _recognizer()
         feature = recognizer.feature(recognizer.alignCrop(img, best))

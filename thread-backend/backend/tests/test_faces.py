@@ -61,3 +61,22 @@ def test_a_person_enrolled_from_one_photo_is_recognised_in_another(api, fake):
     assert got["name"] == "Local Tester"
     photo = api("roster")["people"][0]["photo_b64"]
     assert photo, "the enrolment thumbnail is kept so clients can show a face"
+
+
+# Boxes are (x, y, width, height), as the detector gives them.
+
+
+def test_the_face_in_the_middle_is_picked_over_a_bigger_one_at_the_edge():
+    # From a real frame, 240x320: a bystander close to the camera at the left
+    # edge, and the person being talked to in the middle, further away.
+    bystander, speaker = (9, 180, 22, 28), (95, 173, 15, 20)
+    assert faces.pick_face([bystander, speaker], 240, 320) == speaker
+
+
+def test_a_small_face_in_the_background_does_not_win_by_being_central():
+    near, far_in_the_middle = (10, 140, 60, 70), (112, 150, 12, 14)
+    assert faces.pick_face([near, far_in_the_middle], 240, 320) == near
+
+
+def test_a_lone_face_is_picked_wherever_it_is():
+    assert faces.pick_face([(0, 0, 10, 10)], 240, 320) == (0, 0, 10, 10)
