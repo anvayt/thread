@@ -309,6 +309,12 @@
   #answerBody .foot{padding:8px 0 0;}
   #answerBody .empty{padding:2px 0;}
   @keyframes pop{from{opacity:0; transform:translateY(14px) scale(.96);}}
+  @keyframes cardin{from{opacity:0; transform:translateY(36px);}}
+  /* rows standing in for a card that is still on its way, about its size */
+  .skel span{display:block; height:46px; margin:12px 2px 0; border-radius:14px; background:var(--fill);
+    animation:skel 1.1s ease-in-out infinite alternate;}
+  .skel span.short{width:62%; height:20px;}
+  @keyframes skel{from{opacity:.45;} to{opacity:.9;}}
   /* questions to try, under the field: one row that scrolls sideways on a
      phone. They step aside for an answer, a card, or anything typed. */
   .try{display:flex; gap:8px; justify-content:center; overflow-x:auto; scrollbar-width:none; padding:0 2px;}
@@ -388,7 +394,8 @@
     /* ---- one person's card, above the ask field ---- */
     .sidebar{display:none; top:auto; left:12px; right:12px; bottom:calc(var(--safe-b) + 84px); width:auto; height:auto;
       max-height:min(62vh, 560px); border-radius:26px; flex-direction:column;}
-    body.card-open .sidebar{display:flex; animation:pop .45s var(--spring);}
+    /* the card rises like a sheet; no scaling, which reads as a jolt */
+    body.card-open .sidebar{display:flex; animation:cardin .42s var(--spring); will-change:transform;}
     .pages{flex:1 1 auto; min-height:0; width:100%; transform:none !important;}
     .page{width:100%;}
     #listPage{display:none;}
@@ -1010,7 +1017,8 @@ function renderGraph(g, opts){
         })
         .on("mouseenter", (ev,d)=>focusNode(d))
         .on("mouseleave", unfocus)
-        .on("pointerdown", grab);             // dragging a node: see "moving a node"
+        .on("pointerdown", grab)              // dragging a node: see "moving a node"
+        .on("pointerdown.card", (ev, d)=>{ if(isPerson(d)) fetchCard(d.label); });   // start before the tap lands
       gs.append("title");
       gs.each(function(d){
         if(isPerson(d)) buildPerson(d3.select(this)); else buildTag(d3.select(this), d);
@@ -1560,6 +1568,7 @@ function renderRoster(people, fresh){
   fresh = fresh || new Set();
   ROSTER.clear();
   for(const p of people) ROSTER.set(p.name, p);
+  setTimeout(()=>prefetchCards(people), 1500);     // once the map has drawn
   $("peopleCount").textContent = people.length || "";
   const el = $("roster");
   if(!people.length){
@@ -1795,6 +1804,77 @@ function dropSections(md, titles){
   }
   return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
+/* ---------- a person's card, ready before it is opened ----------
+   A card's two halves (the lens view and the full page) are fetched together
+   and kept, so a card opens whole instead of growing in two steps. The people
+   on the map are fetched ahead of time, a press on a face starts its fetch
+   before the tap lands, and a card already seen opens at once and is quietly
+   refreshed if anything about the person changed. */
+const CARDS = new Map();                 // name → {sig, promise, data}
+function personSig(name){
+  const p = ROSTER.get(name);
+  return p ? JSON.stringify([p.encounters, p.role, p.org, p.relationship, p.last_interaction]) : "";
+}
+function fetchCard(name){
+  const sig = personSig(name), have = CARDS.get(name);
+  if(have && have.sig === sig) return have.promise;
+  let failed = null;
+  const promise = Promise.all([
+    call("lookup", {name}).catch(e=>{ failed = e; return null; }),
+    call("person_card", {name}).catch(e=>{ failed = e; return null; })
+  ]).then(([rec, card]) => {
+    const data = {rec, card, failed}, entry = CARDS.get(name);
+    if(entry && entry.promise === promise){
+      if(!rec && !card) CARDS.delete(name);       // nothing came back: try again next time
+      else entry.data = data;
+    }
+    return data;
+  });
+  CARDS.set(name, {sig, promise, data: have && have.data});
+  return promise;
+}
+let PREFETCHING = "";
+async function prefetchCards(people){
+  const names = people.slice().sort((a, b)=>(b.encounters || 0) - (a.encounters || 0))
+    .slice(0, 12).map(p => p.name);
+  const key = names.map(personSig).join("|") + names.join("|");
+  if(key === PREFETCHING) return;
+  PREFETCHING = key;
+  for(const name of names){
+    if(PREFETCHING !== key) return;                // the roster changed: a newer pass took over
+    try{ await fetchCard(name); }catch(e){}
+  }
+}
+const SKELETON = '<div class="skel" aria-hidden="true"><span class="short"></span><span></span><span></span><span class="short"></span></div>';
+/* swap the card's body; on a phone, fade the new rows in and let the card
+   ease to its new height instead of jumping */
+function setCardBody(html){
+  const body = $("cardBody"), box = $("sidebar");
+  if(body.dataset.shown === html) return;
+  const smooth = !isWide() && !reducedMotion() && box.offsetParent;
+  const before = smooth ? box.getBoundingClientRect().height : 0;
+  body.innerHTML = html;
+  body.dataset.shown = html;
+  if(!smooth) return;
+  const after = box.getBoundingClientRect().height;
+  body.animate([{opacity:0}, {opacity:1}], {duration:240, easing:"ease-out"});
+  if(before && Math.abs(after - before) > 2){
+    box.animate([{height: before + "px"}, {height: after + "px"}], {duration:320, easing:"cubic-bezier(.32,.72,0,1)"});
+  }
+}
+function cardHtml(name, {rec, card, failed}){
+  const lens = lensHtml(rec, name);
+  const ex = extrasHtml(rec);
+  /* the dossier opens by repeating the name and company the page's header
+     already shows — when lookup found them, start at its first section instead */
+  let src = (card && card.md) || "";
+  if(rec && rec.found !== false && /^##\s/m.test(src)) src = src.slice(src.search(/^##\s/m));
+  src = dropSections(src, ex.drop);
+  const known = (rec && rec.found !== false) || (card && card.name);
+  return ((known ? followHtml(name) : "") + lens + ex.html + mdGroups(src))
+    || '<div class="empty">' + esc(failText(failed, "Nothing saved about this person yet.")) + '</div>';
+}
+
 async function openPerson(name){
   if(!name) return;
   OPEN_NAME = name;
@@ -1818,33 +1898,24 @@ async function openPerson(name){
   }
   document.querySelector("#panel .pscroll").scrollTop = 0;
   $("closeCard").focus({preventScroll:true});
+  /* a card already here opens whole at once; otherwise rows the card's size
+     hold its place, so it doesn't grow in steps */
+  const kept = CARDS.get(name);
   const body = $("cardBody");
-  body.innerHTML = '<div class="empty">Looking up…</div>';
-  /* the lens view (lookup) and the full dossier (person_card) are independent —
-     one failing must not blank the other */
-  let failed = null;
-  const [rec, card] = await Promise.all([
-    call("lookup", {name}).catch(e=>{ failed = e; return null; }),
-    call("person_card", {name}).catch(e=>{ failed = e; return null; })
-  ]);
+  body.dataset.shown = "";
+  if(kept && kept.data) setCardBody(cardHtml(name, kept.data));
+  else{ body.innerHTML = SKELETON; body.dataset.shown = SKELETON; }
+  const data = await fetchCard(name);
+  const {rec} = data;
   if(notePhoto(rec) || (rec && rec.name && rec.name !== name && notePhoto({name, photo_b64:rec.photo_b64}))){
     nodeG.selectAll("g.gnode").each(function(d){ if(d.kind === "person") paintNode(this, d); });
   }
   if(OPEN_NAME !== name) return;        // someone else was opened while this loaded
   paintCardHead(name);
-  const lens = lensHtml(rec, name);
-  const ex = extrasHtml(rec);
-  /* the dossier opens by repeating the name and company the page's header
-     already shows — when lookup found them, start at its first section instead */
-  let src = (card && card.md) || "";
-  if(rec && rec.found !== false && /^##\s/m.test(src)) src = src.slice(src.search(/^##\s/m));
-  src = dropSections(src, ex.drop);
-  const known = (rec && rec.found !== false) || (card && card.name);
-  body.innerHTML = ((known ? followHtml(name) : "") + lens + ex.html + mdGroups(src))
-    || '<div class="empty">' + esc(failText(failed, "Nothing saved about this person yet.")) + '</div>';
+  setCardBody(cardHtml(name, data));
   /* the card has grown: keep them clear of it */
-  const kept = pinnedNode();
-  if(kept) keepInSight(kept);
+  const pinned = pinnedNode();
+  if(pinned) keepInSight(pinned);
 }
 
 /* ---------- drafting a follow-up ----------
