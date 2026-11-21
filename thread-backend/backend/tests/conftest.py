@@ -42,6 +42,12 @@ class FakeLLM:
         self.card = llm.Card(headline="Someone you know", lines=["Ask how it went"])
         self.line = "Ask about the launch."
         self.caption_text = "A cleaned caption."
+        # The agent's replies, one per step, in order. With none scripted it
+        # behaves like a server that can't call tools, so Ask falls back to
+        # pick_matches.
+        self.turns: list[llm.Turn] = []
+        # What the agent was sent at each step: (messages, tool names, finish_with).
+        self.agent_steps: list[tuple[list[dict], list[str], str]] = []
 
     def count(self, name: str) -> int:
         return sum(1 for called, _ in self.calls if called == name)
@@ -66,8 +72,17 @@ class FakeLLM:
         self.calls.append(("pick_matches", args))
         return self.matches
 
+    def agent_turn(self, messages, tools, finish_with=""):
+        self.calls.append(("agent_turn", ()))
+        self.agent_steps.append(
+            ([dict(m) for m in messages], [t["function"]["name"] for t in tools], finish_with)
+        )
+        if not self.turns:
+            raise llm.LLMError("this server can't call tools")
+        return self.turns.pop(0)
 
-TASKS = ("compose", "caption_line", "extract_contact", "lookup_card", "pick_matches")
+
+TASKS = ("compose", "caption_line", "extract_contact", "lookup_card", "pick_matches", "agent_turn")
 REAL_TASKS = {task: getattr(llm, task) for task in TASKS}
 
 

@@ -47,6 +47,35 @@ class ChatServer:
             )
         )
 
+    def will_call(self, *calls: tuple[str, str]) -> None:
+        """Reply with tool calls: (name, arguments as sent, a JSON string)."""
+        self.replies.append(
+            httpx2.Response(
+                200,
+                json={
+                    "id": "chatcmpl-test",
+                    "object": "chat.completion",
+                    "created": 0,
+                    "model": llm.DEFAULT_MODEL,
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": {
+                                "role": "assistant",
+                                "content": None,
+                                "tool_calls": [
+                                    {"id": f"call-{n}", "type": "function",
+                                     "function": {"name": name, "arguments": args}}
+                                    for n, (name, args) in enumerate(calls)
+                                ],  # fmt: skip
+                            },
+                            "finish_reason": "tool_calls",
+                        }
+                    ],
+                },
+            )
+        )
+
     def will_refuse(self, code: int, message: str) -> None:
         self.replies.append(
             httpx2.Response(
@@ -238,3 +267,40 @@ def test_a_server_that_is_not_running_is_named_in_the_error(server):
         REAL_TASKS["compose"](*SARAH)
 
     assert len(server.requests) == 1
+
+
+# -------------------------------------------------------------------- agent
+
+TOOLS = [{"type": "function", "function": {"name": "person", "parameters": {"type": "object"}}}]
+
+
+def test_an_agent_step_offers_the_tools_and_lets_the_model_choose(server):
+    server.will_call(("person", '{"name": "Sarah"}'), ("promises", "{}"))
+    turn = REAL_TASKS["agent_turn"]([{"role": "user", "content": "q"}], TOOLS)
+
+    sent = server.requests[0]
+    assert sent["tools"] == TOOLS
+    assert sent["tool_choice"] == "auto"
+    assert sent["chat_template_kwargs"] == {"enable_thinking": False}
+    assert [(c.id, c.name, c.args) for c in turn.calls] == [
+        ("call-0", "person", {"name": "Sarah"}),
+        ("call-1", "promises", {}),
+    ]
+
+
+def test_the_last_agent_step_must_call_the_tool_that_answers(server):
+    server.will_call(("answer", '{"text": "t", "people": []}'))
+    REAL_TASKS["agent_turn"]([{"role": "user", "content": "q"}], TOOLS, finish_with="answer")
+    assert server.requests[0]["tool_choice"] == {"type": "function", "function": {"name": "answer"}}
+
+
+def test_tool_arguments_that_are_not_an_object_come_back_empty(server):
+    server.will_call(("person", "not json"), ("person", "[1, 2]"))
+    turn = REAL_TASKS["agent_turn"]([{"role": "user", "content": "q"}], TOOLS)
+    assert [c.args for c in turn.calls] == [{}, {}]
+
+
+def test_a_server_that_cannot_call_tools_is_reported(server):
+    server.will_refuse(400, '"auto" tool choice requires --enable-auto-tool-choice')
+    with pytest.raises(llm.LLMError, match="enable-auto-tool-choice"):
+        REAL_TASKS["agent_turn"]([{"role": "user", "content": "q"}], TOOLS)

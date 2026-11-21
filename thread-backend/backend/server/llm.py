@@ -15,6 +15,7 @@ substitute fakes.
 
 import json
 import os
+from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
 import openai
@@ -158,6 +159,25 @@ def _client() -> openai.OpenAI:
     return _clients[(base_url, key)]
 
 
+def _complete(**request):
+    """Send one chat completion request, reporting a failure as LLMError."""
+    try:
+        return _client().chat.completions.create(
+            model=model_name(),
+            # Nemotron reasons before answering unless told not to. These
+            # tasks are short and the wearer is waiting.
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            **request,
+        )
+    except openai.APIError as err:
+        hint = ""
+        if isinstance(err, openai.APIConnectionError) and not isinstance(
+            err, openai.APITimeoutError
+        ):
+            hint = f" Nothing answered at {endpoint()}; is the model server running?"
+        raise LLMError(f"The language model request failed: {err}{hint}") from err
+
+
 class _NoDefaults(GenerateJsonSchema):
     """Leaves `default` out of a schema. The model never sees a default
     applied, and leaving it out keeps to the part of JSON Schema that every
@@ -176,7 +196,7 @@ def _ask[T: BaseModel](
     max_tokens: int,
 ) -> T:
     """Run one task. `inputs` is (name, what it is, value) for each input."""
-    client = _client()
+    _client()  # a missing key is reported before any work is done
     schema = shape.model_json_schema(schema_generator=_NoDefaults)
     described = "\n".join(f"- {name}: {what}" for name, what, _ in inputs)
     # The schema is also stated in words, for an endpoint that ignores
@@ -190,34 +210,22 @@ def _ask[T: BaseModel](
 
     problem = "no answer"
     for attempt in range(2):
-        try:
-            reply = client.chat.completions.create(
-                model=model_name(),
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                # The server constrains decoding to this schema, so the reply
-                # is the object itself.
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {"name": shape.__name__, "schema": schema},
-                },
-                temperature=temperature,
-                # A cut-off answer is the usual reason for a retry; give the
-                # second attempt room to finish.
-                max_tokens=max_tokens * (attempt + 1),
-                # Nemotron reasons before answering unless told not to. These
-                # tasks are short and the wearer is waiting.
-                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
-            )
-        except openai.APIError as err:
-            hint = ""
-            if isinstance(err, openai.APIConnectionError) and not isinstance(
-                err, openai.APITimeoutError
-            ):
-                hint = f" Nothing answered at {endpoint()}; is the model server running?"
-            raise LLMError(f"The language model request failed: {err}{hint}") from err
+        reply = _complete(
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            # The server constrains decoding to this schema, so the reply
+            # is the object itself.
+            response_format={
+                "type": "json_schema",
+                "json_schema": {"name": shape.__name__, "schema": schema},
+            },
+            temperature=temperature,
+            # A cut-off answer is the usual reason for a retry; give the
+            # second attempt room to finish.
+            max_tokens=max_tokens * (attempt + 1),
+        )
 
         choice = reply.choices[0] if reply.choices else None
         text = (choice.message.content if choice else None) or ""
@@ -367,3 +375,60 @@ def pick_matches(question: str, roster: str) -> Matches:
         temperature=0.0,
         max_tokens=400,
     )
+
+
+# ------------------------------------------------------------------- agent
+
+
+@dataclass
+class ToolCall:
+    """One tool the model asked to use, with its arguments already parsed.
+    Arguments that are not a JSON object come back as an empty dict."""
+
+    id: str
+    name: str
+    args: dict = field(default_factory=dict)
+
+
+@dataclass
+class Turn:
+    """One reply from the model in an agent conversation."""
+
+    content: str = ""
+    calls: list[ToolCall] = field(default_factory=list)
+
+
+def agent_turn(messages: list[dict], tools: list[dict], *, finish_with: str = "") -> Turn:
+    """One step of an agent: the conversation so far and the tools on offer
+    go to the model, which calls one or more of them or replies in words.
+    With `finish_with`, it must call that tool, which ends the conversation.
+    The choice is otherwise left to the model ("auto"): requiring a call
+    makes the server constrain every token to a JSON shape, which is several
+    times slower and no better.
+
+    This needs a server that does tool calling: vLLM started with
+    `--enable-auto-tool-choice --tool-call-parser qwen3_coder`, or NVIDIA's
+    hosted API. Anything else is reported as LLMError, and the caller falls
+    back to a single question.
+    """
+    choice = {"type": "function", "function": {"name": finish_with}} if finish_with else "auto"
+    reply = _complete(
+        messages=messages,
+        tools=tools,
+        tool_choice=choice,
+        temperature=0.0,
+        max_tokens=500,
+    )
+    if not reply.choices:
+        raise LLMError("The language model gave an empty reply.")
+    message = reply.choices[0].message
+    calls = []
+    for call in message.tool_calls or []:
+        try:
+            args = json.loads(call.function.arguments or "{}")
+        except json.JSONDecodeError:
+            args = {}
+        calls.append(
+            ToolCall(id=call.id, name=call.function.name, args=args if isinstance(args, dict) else {})
+        )
+    return Turn(content=message.content or "", calls=calls)

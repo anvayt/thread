@@ -316,6 +316,7 @@ struct GlassesView: View {
 /// Where the backend is, and whether it answers.
 struct BackendView: View {
     @AppStorage(BackendAPI.baseURLKey) private var baseURL = BackendAPI.defaultBase
+    @State private var password = BackendPassword.value
     @State private var status: String?
     @State private var reachable = false
     @State private var checking = false
@@ -331,7 +332,20 @@ struct BackendView: View {
             } header: {
                 Text("Address")
             } footer: {
-                Text("The backend runs on your own computer. On an iPhone, enter the “From a phone” address it prints when it starts; both need to be on the same Wi-Fi. The default only works in the Simulator.")
+                Text("Where your Thread backend is: an https address when it runs on a server, or the “From a phone” address it prints when it runs on a computer on the same Wi-Fi. The default only works in the Simulator.")
+            }
+
+            Section {
+                SecureField("Password", text: $password)
+                    .textContentType(.password)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .onSubmit { Task { await check() } }
+                    .onChange(of: password) { BackendPassword.value = password }
+            } header: {
+                Text("Password")
+            } footer: {
+                Text("The backend's password, kept in this iPhone's Keychain. Leave it empty for a backend on your own Wi-Fi that has none.")
             }
 
             Section {

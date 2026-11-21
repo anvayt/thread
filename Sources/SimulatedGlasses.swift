@@ -35,7 +35,7 @@ import SwiftUI
 ///     connect, disconnect       the Connect glasses button
 ///     meet                      the Meet button
 ///     say Hi, I'm Dana          what was "heard", when there is no microphone
-///     tab 3                     switch tab (0 Meet, 1 People, 2 Map, 3 Glasses, 4 Search)
+///     tab 3                     switch tab (0 Meet, 1 Map, 2 People, 3 Glasses)
 ///     set glassesButtonsStartMeet off   flip a switch kept in UserDefaults
 ///     don, doff, fold, unfold   wearing and folding the glasses
 @MainActor

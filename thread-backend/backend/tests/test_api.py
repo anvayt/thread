@@ -429,7 +429,9 @@ def test_query_gives_the_model_the_roster_and_reports_who_it_picked(api, fake):
     ]  # fmt: skip
     assert got["reason"] == "Priya is the investor."
     assert got["searched"] == 3
-    question, roster = fake.calls[0][1]
+    # the agent was tried first; this server can't call tools
+    assert fake.count("agent_turn") == 1
+    [(question, roster)] = [args for name, args in fake.calls if name == "pick_matches"]
     assert question == "who invests?"
     assert "Marcus Webb | Engineering Lead | Northwind |" in roster
 
@@ -458,6 +460,30 @@ def test_query_lists_a_person_once_even_if_picked_twice(api, fake):
     api("seed")
     fake.matches = llm.Matches(names=["Marcus Webb", "Marcus", "Webb"], reason="r")
     assert len(api("query", {"question": "q"})["matches"]) == 1
+
+
+def test_query_is_answered_by_the_agent_with_its_links_and_steps(api, fake):
+    api("seed")
+    fake.turns = [
+        llm.Turn(calls=[llm.ToolCall(id="c1", name="person", args={"name": "Priya"})]),
+        llm.Turn(calls=[llm.ToolCall(id="c2", name="answer", args={
+            "text": "Priya Raman: Sarah introduced you.",
+            "people": ["Priya Raman"],
+            "links": [{"from": "Priya Raman", "to": "Sarah Chen", "via": "introduced by Sarah"}],
+        })]),
+    ]  # fmt: skip
+
+    got = api("query", {"question": "who invests?", "wearer": "Alex"})
+
+    assert got["agent"] is True
+    assert got["reason"] == "Priya Raman: Sarah introduced you."
+    assert [m["name"] for m in got["matches"]] == ["Priya Raman", "Sarah Chen"]
+    assert got["links"] == [{"from": "Priya Raman", "to": "Sarah Chen", "kind": "person",
+                             "via": "introduced by Sarah"}]  # fmt: skip
+    assert got["steps"] == ["Read about Priya Raman"]
+    assert got["searched"] == 3
+    assert fake.count("pick_matches") == 0
+    assert "The wearer's own name is Alex" in fake.agent_steps[0][0][0]["content"]
 
 
 # ---------------------------------------------------------------- dashboard

@@ -31,15 +31,17 @@ as an NVIDIA Brev instance:
 ```bash
 vllm serve nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4 \
     --served-model-name nvidia/nemotron-3.5-lightning-30b-a3b \
+    --enable-auto-tool-choice --tool-call-parser qwen3_coder \
     --host 127.0.0.1 --port 8001
 ```
 
 vLLM's [serving recipe](https://recipes.vllm.ai/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16)
-lists the flags that suit each GPU, and the BF16 checkpoint. Keep the three
-above: port 8001 is where the backend looks, `--served-model-name` is the name
-it asks for, and `127.0.0.1` keeps the model private to the machine. Leave out
-`--reasoning-parser` and the tool-calling flags: the backend switches the
-model's thinking off and uses no tools. If vLLM runs on another machine, set
+lists the flags that suit each GPU, and the BF16 checkpoint; on one H100 the
+NVFP4 checkpoint above is the recipe's choice. Keep the flags above: port 8001
+is where the backend looks, `--served-model-name` is the name it asks for, the
+two tool-calling flags let Ask work as an agent (below), and `127.0.0.1` keeps
+the model private to the machine. Leave out `--reasoning-parser`: the backend
+switches the model's thinking off. If vLLM runs on another machine, set
 `LLM_BASE_URL` to its address.
 
 **NVIDIA's hosted API**, to try it without a GPU. Create a key at
@@ -168,7 +170,8 @@ captions, pulling structure out of speech, and phrasing the reminder.
 | `server/main.py` | The HTTP endpoints (FastAPI). |
 | `server/store.py` | The database: people, interactions, topics, things (SQLite). |
 | `server/faces.py` | Face detection, signatures and photo thumbnails (OpenCV). |
-| `server/llm.py` | The five language tasks and the shape of each answer (Nemotron, through an OpenAI-compatible API). |
+| `server/llm.py` | The five language tasks and the shape of each answer, and one agent step with tools (Nemotron, through an OpenAI-compatible API). |
+| `server/agent.py` | Ask: Nemotron as an agent with read-only tools over the people you have met. |
 | `server/logic.py` | Name matching, similarity, and the lookup-card cache. |
 | `server/__main__.py` | Start-up: reads `.env`, prints addresses, runs the server. |
 
@@ -185,9 +188,20 @@ enforces while the answer is written, and is repeated in the instructions for
 a server that does not. The model's thinking is switched off for every task:
 the answers are short, and someone is waiting for them.
 
-`query` shows the division of labour: **the database builds the roster, the
-model only picks from it**, and every name it returns is checked back against
-the database, so it can report "nobody" instead of inventing a contact.
+`query`, the Ask field, runs Nemotron as an agent. It gets the question with
+an outline of everyone you have met and read-only tools: search everyone, one
+person's page, who someone connects to and through what, who talked about a
+topic, recent meetings, open promises. It uses them over up to three rounds of three lookups,
+then calls `answer` with what to say, who it is about, and the links it points
+out ("introduce Sarah to Dana: both talk payments"). **The model reads the
+network, it never writes to it**: every name it gives is checked back against
+the database, a link between two people is kept only when the database shows
+what they share (a topic, an interest, a company, or one introducing the
+other), and that, not the model's wording, is what the link says. Anything
+else is dropped, so it can report "nobody" instead of inventing a contact. The answer also lists what the agent looked at, and the
+map lights up the people and links. A model server without tool calling gets
+the question the simple way: the database builds the roster and the model only
+picks from it.
 
 Lookup cards are cached per person and rebuilt only when something about that
 person changes, so reopening a card does not call the model again.
@@ -203,7 +217,7 @@ All are `POST /api/<name>` with a JSON body.
 | `ingest` | `transcript`, optional `speaker` | `saved`, `new_person`, `role`, `org`, `topics`, `new_topics`, `followups` |
 | `lookup` | `name` (or `"last"`) | `found`, `headline`, `lines`, `topics`, `followups`, `history`, `photo_b64` |
 | `person_card` | `name`, optional `refresh` | `name`, `md` (a markdown page), `photo_b64` |
-| `query` | `question` | `matches` (`name`, `org`, `last`), `reason`, `searched` |
+| `query` | `question`, optionally `wearer` (your own name) | `matches` (`name`, `org`, `last`), `reason` (the answer), `searched`; from the agent also `links` (`from`, `to`, `kind`: person or topic, `via`), `steps` (what it looked at) and `agent: true` |
 | `caption` | `text`, optional `lang` | `display_text` |
 | `roster` | nothing | `people`, `things` |
 | `graph`, `timeline` | nothing | the dashboard's views |

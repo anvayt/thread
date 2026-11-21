@@ -6,9 +6,11 @@ import WebKit
 /// The backend already draws it (the dashboard it serves at `/`), with a
 /// layout made for a phone, so the app shows that page here, full screen and
 /// without browser controls, from the same address the rest of the app uses.
-/// It needs no computer of yours to be on, only the backend.
+/// It needs no computer of yours to be on, only the backend. When the
+/// backend has a password, the page is given the one in Glasses › Backend.
 struct MapView: View {
     @AppStorage(BackendAPI.baseURLKey) private var baseURL = BackendAPI.defaultBase
+    @AppStorage(BackendPassword.changesKey) private var passwordChanges = 0
     @State private var reloads = 0
     @State private var loading = true
     @State private var problem: String?
@@ -23,7 +25,7 @@ struct MapView: View {
             Color(.systemBackground)
                 .ignoresSafeArea()
             if let url {
-                BackendPage(url: url, reloads: reloads, loading: $loading, problem: $problem)
+                BackendPage(url: url, reloads: reloads + passwordChanges, loading: $loading, problem: $problem)
                     .opacity(problem == nil ? 1 : 0)
             }
             if let problem {
@@ -39,6 +41,10 @@ struct MapView: View {
                 ProgressView()
             }
         }
+        // A new address or password loads the page again, so clear what the
+        // old one said.
+        .onChange(of: baseURL) { problem = nil; loading = true }
+        .onChange(of: passwordChanges) { problem = nil; loading = true }
     }
 
     private func reload() {
@@ -109,6 +115,36 @@ private struct BackendPage: UIViewRepresentable {
             fail(error)
         }
 
+        /// The backend asks for its password: give it the one in Glasses ›
+        /// Backend, unless that one was just turned down.
+        func webView(
+            _ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge,
+            completionHandler: @escaping @MainActor (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+        ) {
+            let space = challenge.protectionSpace
+            guard space.authenticationMethod == NSURLAuthenticationMethodHTTPBasic,
+                  space.host == loadedURL?.host()
+            else {
+                completionHandler(.performDefaultHandling, nil)
+                return
+            }
+            let password = BackendPassword.value
+            let turnedDown = challenge.previousFailureCount > 0
+                && challenge.proposedCredential?.password == password
+            guard !password.isEmpty, !turnedDown else {
+                completionHandler(.cancelAuthenticationChallenge, nil)
+                parent.loading = false
+                parent.problem = password.isEmpty
+                    ? "This backend needs a password. Enter it in Glasses › Backend."
+                    : "The backend didn't accept the password in Glasses › Backend."
+                return
+            }
+            completionHandler(
+                .useCredential,
+                URLCredential(user: BackendPassword.user, password: password, persistence: .forSession)
+            )
+        }
+
         /// Links that lead off the backend open in Safari, not in the map.
         func webView(
             _ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
@@ -128,6 +164,8 @@ private struct BackendPage: UIViewRepresentable {
             let code = (error as NSError).code
             guard code != NSURLErrorCancelled else { return }
             parent.loading = false
+            // A turned-down password has already said so.
+            guard parent.problem == nil else { return }
             parent.problem = "\(error.localizedDescription) Check the address in Glasses › Backend."
             print("[thread] map failed to load: \(error.localizedDescription)")
         }

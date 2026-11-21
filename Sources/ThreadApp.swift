@@ -47,14 +47,13 @@ struct ThreadApp: App {
 /// The app's tabs, in order. The simulated glasses' `tab N` command uses the
 /// raw values.
 enum AppTab: Int, Hashable {
-    case meet, people, map, glasses, search
+    case meet, map, people, glasses
 }
 
 struct RootView: View {
     @EnvironmentObject private var glasses: GlassesManager
     @EnvironmentObject private var speech: SpeechManager
     @ObservedObject private var engine = MeetEngine.shared
-    @StateObject private var search = SearchModel()
     @AppStorage(WelcomeView.seenKey) private var hasSeenWelcome = false
     @State private var tab: AppTab = .meet
     @State private var bootstrapped = false
@@ -69,21 +68,16 @@ struct RootView: View {
             Tab("Meet", systemImage: "person.wave.2", value: AppTab.meet) {
                 MeetView()
             }
-            Tab("People", systemImage: "person.2", value: AppTab.people) {
-                PeopleView()
-            }
             Tab("Map", systemImage: "point.3.connected.trianglepath.dotted", value: AppTab.map) {
                 MapView()
+            }
+            Tab("People", systemImage: "person.2", value: AppTab.people) {
+                PeopleView()
             }
             Tab("Glasses", systemImage: "eyeglasses", value: AppTab.glasses) {
                 GlassesView()
             }
-            Tab(value: AppTab.search, role: .search) {
-                SearchView(model: search)
-            }
         }
-        // Choosing the Search tab opens its search field straight away.
-        .tabViewSearchActivation(.searchTabSelection)
         .tabBarMinimizeBehavior(.onScrollDown)
         // A pass that is running while another tab is open shows above the
         // tab bar, with Done to end it from there.

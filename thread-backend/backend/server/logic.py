@@ -27,6 +27,47 @@ def same_person(a: str, b: str) -> bool:
     return all(word in long_ for word in short)
 
 
+def find_by_name(people: list[Person], name: str) -> Person | None:
+    """Exact match wins outright; a partial name ("Sarah") only falls back to
+    the looser match, so two full names never collide on a first name."""
+    wanted = name.strip().lower()
+    for p in reversed(people):
+        if p.name.lower() == wanted:
+            return p
+    for p in reversed(people):
+        if same_person(p.name, name):
+            return p
+    return None
+
+
+def resolve_names(people: list[Person], picked: list[str]) -> list[Person]:
+    """The people on record that names chosen by the model refer to, each
+    once, in the order given.
+
+    The model chooses, it does not get to invent a contact. But it does
+    occasionally mistype a name it just read ("Priva" for "Priya"), and losing
+    a real match over one letter looks broken. So: exact, then whole-word
+    overlap, then a single unambiguous word hit. Never a guess.
+    """
+    found: list[Person] = []
+    taken: set[int | None] = set()
+    for name in picked:
+        if not isinstance(name, str) or not name.strip():
+            continue
+        hit = find_by_name(people, name)
+        if hit is None:
+            # Share a whole word, but only when exactly one person does - two
+            # people called Sarah must never collapse into each other.
+            words = set(name.lower().split())
+            sharing = [p for p in people if words & set(p.name.lower().split())]
+            if len(sharing) == 1:
+                hit = sharing[0]
+        if hit is not None and hit.id not in taken:
+            taken.add(hit.id)
+            found.append(hit)
+    return found
+
+
 def cosine(a: list[float], b: list[float]) -> float:
     """Cosine similarity; 0.0 if either vector is empty, mismatched or zero."""
     if not a or not b or len(a) != len(b):

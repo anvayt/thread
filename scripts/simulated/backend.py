@@ -61,7 +61,12 @@ def caption_line(heard: str, lang: str) -> llm.Caption:
     return llm.Caption(language=lang, text=heard.strip().capitalize() + ".")
 
 
-for task in (extract_contact, compose, lookup_card, pick_matches, caption_line):
+def agent_turn(messages, tools, finish_with=""):
+    # No agent here: Ask falls back to pick_matches above.
+    raise llm.LLMError("the stand-in answers in one step")
+
+
+for task in (extract_contact, compose, lookup_card, pick_matches, caption_line, agent_turn):
     setattr(llm, task.__name__, task)
 
 if __name__ == "__main__":

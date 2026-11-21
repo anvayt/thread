@@ -15,15 +15,27 @@ struct PeopleView: View {
     @State private var renaming: NameTarget?
     @State private var forgetting: RosterPerson?
     @State private var addingSamples = false
+    @State private var query = ""
+
+    /// Everyone, or those whose name, role or company has what is typed in
+    /// the search field.
+    private var shown: [RosterPerson] {
+        let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return people }
+        return people.filter {
+            $0.name.localizedCaseInsensitiveContains(text)
+                || $0.subtitle.localizedCaseInsensitiveContains(text)
+        }
+    }
 
     /// People added without a name, waiting for one.
     private var unnamed: [RosterPerson] {
-        people.filter { FaceCache.isPlaceholder($0.name) }
+        shown.filter { FaceCache.isPlaceholder($0.name) }
     }
 
     /// Everyone else, grouped by the first letter of their name.
     private var groups: [(letter: String, people: [RosterPerson])] {
-        let named = people
+        let named = shown
             .filter { !FaceCache.isPlaceholder($0.name) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         let grouped = Dictionary(grouping: named) { person -> String in
@@ -64,6 +76,7 @@ struct PeopleView: View {
             .listStyle(.plain)
             .listSectionSpacing(0)
             .overlay { emptyState }
+            .searchable(text: $query, prompt: "Search")
             .navigationTitle("People")
             .navigationSubtitle(countLine)
             .navigationDestination(for: String.self) { name in
@@ -144,7 +157,9 @@ struct PeopleView: View {
 
     @ViewBuilder
     private var emptyState: some View {
-        if people.isEmpty {
+        if !people.isEmpty, shown.isEmpty {
+            ContentUnavailableView.search(text: query)
+        } else if people.isEmpty {
             if loading, !loaded {
                 ProgressView()
             } else if let errorText {

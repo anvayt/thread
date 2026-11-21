@@ -17,8 +17,16 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 
-from . import faces, llm
-from .logic import cached_card, card_fingerprint, cosine, same_person, store_card
+from . import agent, faces, llm
+from .logic import (
+    cached_card,
+    card_fingerprint,
+    cosine,
+    find_by_name,
+    resolve_names,
+    same_person,
+    store_card,
+)
 from .store import Interaction, Person, Store, Thing, session
 
 log = logging.getLogger("server")
@@ -80,19 +88,6 @@ def dashboard():
 
 def _stamp() -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S")
-
-
-def _find_by_name(people: list[Person], name: str) -> Person | None:
-    """Exact match wins outright; a partial name ("Sarah") only falls back to
-    the looser match, so two full names never collide on a first name."""
-    wanted = name.strip().lower()
-    for p in reversed(people):
-        if p.name.lower() == wanted:
-            return p
-    for p in reversed(people):
-        if same_person(p.name, name):
-            return p
-    return None
 
 
 def _find_by_fragment(people: list[Person], fragment: str) -> Person | None:
@@ -280,7 +275,7 @@ def enroll(body: EnrollIn):
         # This is the join. Someone whose conversation was already filed by
         # `ingest` must get their face attached to that SAME record -
         # otherwise recognising them later retrieves an empty history.
-        who = _find_by_name(db.people(), name)
+        who = find_by_name(db.people(), name)
         attached = who is not None
         if who is None:
             who = db.add_person(
@@ -496,7 +491,7 @@ def ingest(body: IngestIn):
         return ok({"saved": "", "reason": "nobody introduced themselves - not guessing a name"})
 
     with session() as db:
-        who = _find_by_name(db.people(), name)
+        who = find_by_name(db.people(), name)
         fresh = who is None
         if who is None:
             who = db.add_person(
@@ -637,53 +632,59 @@ def person_card(body: PersonCardIn):
 
 class QueryIn(BaseModel):
     question: str
+    # Who is asking, so "what did I promise?" isn't taken for someone met.
+    wearer: str = ""
+
+
+def _match(p: Person) -> dict:
+    return {"name": p.name, "org": p.org, "last": p.last_interaction}
 
 
 @app.post("/api/query")
 def query(body: QueryIn):
     """Free-text question over everyone met, e.g. 'who did I meet in
-    fintech?'. The store builds the roster; the model only chooses from it."""
+    fintech?' or 'who should I introduce Sarah to?'.
+
+    Nemotron answers it as an agent (server/agent.py): it looks people up with
+    read-only tools over several steps, then says what it found, who it is
+    about and how they connect. Every name and link it gives is checked
+    against the database. A model server that can't call tools gets the
+    question the simple way instead: the store builds the roster and the
+    model only picks from it."""
     with session() as db:
         people = db.people()
         if not people:
             return ok({"matches": [], "reason": "nobody in your memory yet", "searched": 0})
         if not body.question.strip():
             return ok({"matches": [], "reason": "no question asked", "searched": len(people)})
+        network = agent.Network.load(db)
 
-        # Role and last interaction go in too: a person who has been seeded or
-        # enrolled but never had a conversation filed has no topics yet, and
-        # would otherwise be invisible to every question.
-        roster_text = ""
-        for p in people:
-            topics = ", ".join(t.label for t in db.topics(p.id))
-            roster_text += (
-                f"{p.name} | {p.role} | {p.org} | {', '.join(p.interests)}"
-                f" | {topics} | {p.last_interaction}\n"
-            )
+    try:
+        found = agent.ask(network, body.question.strip(), body.wearer.strip())
+        return ok({
+            "matches": [_match(p) for p in found.people],
+            "reason": found.text,
+            "links": found.links,
+            "steps": found.steps,
+            "searched": len(people),
+            "agent": True,
+        })  # fmt: skip
+    except llm.LLMError as err:
+        log.warning("Ask: the agent couldn't answer (%s); asking the simple way.", err)
 
-        picked = llm.pick_matches(body.question, roster_text)
-
-        # Only report people actually on record - the model chooses, it does
-        # not get to invent a contact. But it does occasionally mistype a name
-        # it just read ("Priva" for "Priya"), and losing a real match over one
-        # letter looks broken. So: exact, then whole-word overlap, then a
-        # single unambiguous word hit. Never a guess.
-        matches = []
-        taken = set()
-        for picked_name in picked.names:
-            hit = _find_by_name(people, picked_name)
-            if hit is None:
-                # Share a whole word, but only when exactly one person does -
-                # two people called Sarah must never collapse into each other.
-                words = set(picked_name.lower().split())
-                sharing = [p for p in people if words & set(p.name.lower().split())]
-                if len(sharing) == 1:
-                    hit = sharing[0]
-            if hit is not None and hit.id not in taken:
-                taken.add(hit.id)
-                matches.append({"name": hit.name, "org": hit.org, "last": hit.last_interaction})
-
-        return ok({"matches": matches, "reason": picked.reason, "searched": len(people)})
+    # Role and last interaction go in too: a person who has been seeded or
+    # enrolled but never had a conversation filed has no topics yet, and
+    # would otherwise be invisible to every question.
+    roster_text = ""
+    for k in network.people:
+        p = k.person
+        roster_text += (
+            f"{p.name} | {p.role} | {p.org} | {', '.join(p.interests)}"
+            f" | {', '.join(k.topics)} | {p.last_interaction}\n"
+        )
+    picked = llm.pick_matches(body.question, roster_text)
+    matches = [_match(p) for p in resolve_names(people, picked.names)]
+    return ok({"matches": matches, "reason": picked.reason, "searched": len(people)})
 
 
 class ForgetIn(BaseModel):

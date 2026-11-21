@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import UIKit
 
 // MARK: - Models
@@ -168,13 +169,27 @@ enum BackendAPI {
         return base
     }
 
+    /// The `Authorization` header for the backend's password, or nil when
+    /// none is set. The backend asks for it as HTTP Basic authentication; the
+    /// user name is always `thread`.
+    static var authorization: String? {
+        let password = BackendPassword.value
+        guard !password.isEmpty else { return nil }
+        return "Basic " + Data("\(BackendPassword.user):\(password)".utf8).base64EncodedString()
+    }
+
     enum APIError: LocalizedError {
         case badURL
         case server(status: Int, body: String)
         case backend(message: String)
+        case password(missing: Bool)
 
         var errorDescription: String? {
             switch self {
+            case let .password(missing):
+                return missing
+                    ? "This backend needs a password. Enter it in Glasses › Backend."
+                    : "The backend didn't accept the password in Glasses › Backend."
             case .badURL:
                 return "The backend address in Glasses › Backend looks invalid."
             case let .server(status, body):
@@ -199,6 +214,9 @@ enum BackendAPI {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let authorization {
+            request.setValue(authorization, forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         request.timeoutInterval = timeout
 
@@ -212,6 +230,9 @@ enum BackendAPI {
             let nsError = error as NSError
             print("[thread] backend \(path) failed: \(nsError.domain) \(nsError.code) — \(error.localizedDescription) (\(url.absoluteString))")
             throw error
+        }
+        if (response as? HTTPURLResponse)?.statusCode == 401 {
+            throw APIError.password(missing: authorization == nil)
         }
         guard
             let json = try? JSONSerialization.jsonObject(with: data)
@@ -503,5 +524,50 @@ private extension String {
     var capitalizedFirst: String {
         guard let first else { return self }
         return first.uppercased() + dropFirst()
+    }
+}
+
+/// The backend's password, kept in the Keychain rather than with the other
+/// settings. Empty when the backend has none, as on a computer on the same
+/// Wi-Fi.
+enum BackendPassword {
+    /// The user name that goes with it. The backend checks only the password.
+    static let user = "thread"
+
+    /// Counts changes, so views that use the password (the map) know to load
+    /// again. Only the count is in UserDefaults, never the password.
+    static let changesKey = "backendPasswordChanges"
+
+    private static let query: [String: Any] = [
+        kSecClass as String: kSecClassGenericPassword,
+        kSecAttrService as String: "com.threadglasses.app.backend",
+        kSecAttrAccount as String: "password",
+    ]
+
+    static var value: String {
+        get {
+            var lookup = query
+            lookup[kSecReturnData as String] = true
+            lookup[kSecMatchLimit as String] = kSecMatchLimitOne
+            var item: CFTypeRef?
+            guard SecItemCopyMatching(lookup as CFDictionary, &item) == errSecSuccess,
+                  let data = item as? Data
+            else { return "" }
+            return String(decoding: data, as: UTF8.self)
+        }
+        set {
+            let password = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard password != value else { return }
+            SecItemDelete(query as CFDictionary)
+            if !password.isEmpty {
+                var item = query
+                item[kSecValueData as String] = Data(password.utf8)
+                // Meet calls the backend with the phone in a pocket, locked.
+                item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+                SecItemAdd(item as CFDictionary, nil)
+            }
+            UserDefaults.standard.set(
+                UserDefaults.standard.integer(forKey: changesKey) + 1, forKey: changesKey)
+        }
     }
 }

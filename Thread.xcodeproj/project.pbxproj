@@ -16,7 +16,6 @@
 		427D07AB9753F5711BDD11B4 /* MWDATDisplay in Frameworks */ = {isa = PBXBuildFile; productRef = C2985A3AE097B6209699E55D /* MWDATDisplay */; };
 		47999B900B740AB9B6E8B1FC /* AudioSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADA1516F67E0B2701DB2E078 /* AudioSessionController.swift */; };
 		4A3793E24E7BBA21195B439A /* ListenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5949BCC9C09225950C6190BB /* ListenView.swift */; };
-		53FFB5477D2707BE8B14B836 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA39930374A2CC7D60B5DBAC /* SearchView.swift */; };
 		552921C93A4F6DBB3B088A8D /* PhoneCameraFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AB4461ED86035EB1CC1B368 /* PhoneCameraFallback.swift */; };
 		5AE31029E2A68898A1FCFFE4 /* DictationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F506E1451304EBC2D8DC222E /* DictationManager.swift */; };
 		6F7F17F0E00BFA15C603D5B0 /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 918CF168EDDD99DED1E110F9 /* MapView.swift */; };
@@ -59,7 +58,6 @@
 		E7643CCD477CD74C19A4C1C6 /* MeetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetView.swift; sourceTree = "<group>"; };
 		EF421DF1C4F34E85F8F55135 /* BackendAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendAPI.swift; sourceTree = "<group>"; };
 		F506E1451304EBC2D8DC222E /* DictationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationManager.swift; sourceTree = "<group>"; };
-		FA39930374A2CC7D60B5DBAC /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,7 +112,6 @@
 				E7643CCD477CD74C19A4C1C6 /* MeetView.swift */,
 				25992EC6CBAF0563F328DCAD /* PeopleView.swift */,
 				5AB4461ED86035EB1CC1B368 /* PhoneCameraFallback.swift */,
-				FA39930374A2CC7D60B5DBAC /* SearchView.swift */,
 				CBE8A199D58F828379074767 /* SimulatedGlasses.swift */,
 				6FD5024B8D0C75FF41793762 /* SpeechManager.swift */,
 				8AF64A8E57FF072ECCBA2EB1 /* Theme.swift */,
@@ -219,7 +216,6 @@
 				8363D6FCA0313965EF777162 /* MeetView.swift in Sources */,
 				DFBA251120A9E6E3BB056B82 /* PeopleView.swift in Sources */,
 				552921C93A4F6DBB3B088A8D /* PhoneCameraFallback.swift in Sources */,
-				53FFB5477D2707BE8B14B836 /* SearchView.swift in Sources */,
 				C9F41103150C85DCC2947586 /* SimulatedGlasses.swift in Sources */,
 				BB67F1B75BA6074765340FA8 /* SpeechManager.swift in Sources */,
 				3DEE615565DA4379847D3379 /* Theme.swift in Sources */,
