@@ -14,7 +14,9 @@ substitute fakes.
 """
 
 import json
+import logging
 import os
+import time
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 
@@ -30,9 +32,31 @@ DEFAULT_BASE_URL = "http://127.0.0.1:8001/v1"
 # Nemotron 3.5 Lightning 30B-A3B, by the name NVIDIA's API catalog gives it.
 DEFAULT_MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b"
 
+# How long each task may take, in seconds, before Thread stops waiting for
+# it, the retry included. On a working server each finishes in one to three
+# seconds; the limits are for a server that has stalled, so that nobody
+# stands in front of someone watching "Looking…" for a minute.
+SECONDS = {
+    "compose": 8.0,
+    "caption_line": 6.0,
+    "extract_contact": 20.0,
+    "lookup_card": 12.0,
+    "pick_matches": 12.0,
+    "draft_followup": 15.0,
+    "agent_turn": 10.0,
+}
+
+log = logging.getLogger("thread.llm")
+
 
 class LLMError(RuntimeError):
     """The language model could not be reached or did not give a usable answer."""
+
+    def __init__(self, message: str, *, unreachable: bool = False) -> None:
+        super().__init__(message)
+        # Nothing answered, or not in time. Asking again straight away would
+        # only wait as long again.
+        self.unreachable = unreachable
 
 
 # ------------------------------------------------------------ answer shapes
@@ -167,23 +191,42 @@ def _client() -> openai.OpenAI:
     return _clients[(base_url, key)]
 
 
-def _complete(**request):
-    """Send one chat completion request, reporting a failure as LLMError."""
+def _complete(*, timeout: float, **request):
+    """Send one chat completion request, giving up after `timeout` seconds,
+    and report a failure as LLMError in words the wearer can act on."""
     try:
         return _client().chat.completions.create(
             model=model_name(),
             # Nemotron reasons before answering unless told not to. These
             # tasks are short and the wearer is waiting.
             extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            timeout=timeout,
             **request,
         )
+    except openai.APITimeoutError as err:
+        log.warning("no answer from %s within %.0f s", endpoint(), timeout)
+        raise LLMError(
+            f"Nemotron didn't answer within {max(timeout, 1):.0f} seconds, so Thread "
+            "stopped waiting. The model server may be busy or restarting; try again "
+            "in a minute.",
+            unreachable=True,
+        ) from err
+    except openai.APIConnectionError as err:
+        log.warning("nothing answered at %s: %s", endpoint(), err)
+        raise LLMError(
+            "Nemotron isn't answering right now. The model server may be starting "
+            "up or restarting; try again in a minute.",
+            unreachable=True,
+        ) from err
+    except openai.InternalServerError as err:
+        log.warning("the model server failed: %s", err)
+        raise LLMError(
+            f"Nemotron's server had a problem answering ({err.status_code}). Try "
+            "again in a minute.",
+            unreachable=True,
+        ) from err
     except openai.APIError as err:
-        hint = ""
-        if isinstance(err, openai.APIConnectionError) and not isinstance(
-            err, openai.APITimeoutError
-        ):
-            hint = f" Nothing answered at {endpoint()}; is the model server running?"
-        raise LLMError(f"The language model request failed: {err}{hint}") from err
+        raise LLMError(f"The language model request failed: {err}") from err
 
 
 class _NoDefaults(GenerateJsonSchema):
@@ -202,8 +245,10 @@ def _ask[T: BaseModel](
     *,
     temperature: float,
     max_tokens: int,
+    seconds: float,
 ) -> T:
-    """Run one task. `inputs` is (name, what it is, value) for each input."""
+    """Run one task. `inputs` is (name, what it is, value) for each input.
+    The whole task, a retry included, takes at most `seconds`."""
     _client()  # a missing key is reported before any work is done
     schema = shape.model_json_schema(schema_generator=_NoDefaults)
     described = "\n".join(f"- {name}: {what}" for name, what, _ in inputs)
@@ -217,8 +262,13 @@ def _ask[T: BaseModel](
     user = "\n\n".join(f"<{name}>\n{value}\n</{name}>" for name, _, value in inputs)
 
     problem = "no answer"
+    give_up = time.monotonic() + seconds
     for attempt in range(2):
+        left = give_up - time.monotonic()
+        if attempt and left < 1:
+            break  # no time left to ask again
         reply = _complete(
+            timeout=left,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -280,6 +330,7 @@ def compose(
         ],
         temperature=0.3,
         max_tokens=80,
+        seconds=SECONDS["compose"],
     )
 
 
@@ -303,6 +354,7 @@ def caption_line(heard: str, lang: str) -> Caption:
         ],
         temperature=0.0,
         max_tokens=200,
+        seconds=SECONDS["caption_line"],
     )
 
 
@@ -331,6 +383,7 @@ def extract_contact(transcript: str, wearer: str = "") -> ContactInfo:
         fields,
         temperature=0.0,
         max_tokens=500,
+        seconds=SECONDS["extract_contact"],
     )
 
 
@@ -362,6 +415,7 @@ def lookup_card(
         ],
         temperature=0.3,
         max_tokens=400,
+        seconds=SECONDS["lookup_card"],
     )
 
 
@@ -382,6 +436,7 @@ def pick_matches(question: str, roster: str) -> Matches:
         ],
         temperature=0.0,
         max_tokens=400,
+        seconds=SECONDS["pick_matches"],
     )
 
 
@@ -430,6 +485,7 @@ def draft_followup(
         ],
         temperature=0.3,
         max_tokens=300,
+        seconds=SECONDS["draft_followup"],
     )
 
 
@@ -454,7 +510,10 @@ class Turn:
     calls: list[ToolCall] = field(default_factory=list)
 
 
-def agent_turn(messages: list[dict], tools: list[dict], *, finish_with: str = "") -> Turn:
+def agent_turn(
+    messages: list[dict], tools: list[dict], *, finish_with: str = "",
+    seconds: float = SECONDS["agent_turn"],
+) -> Turn:  # fmt: skip
     """One step of an agent: the conversation so far and the tools on offer
     go to the model, which calls one or more of them or replies in words.
     With `finish_with`, it must call that tool, which ends the conversation.
@@ -469,6 +528,7 @@ def agent_turn(messages: list[dict], tools: list[dict], *, finish_with: str = ""
     """
     choice = {"type": "function", "function": {"name": finish_with}} if finish_with else "auto"
     reply = _complete(
+        timeout=seconds,
         messages=messages,
         tools=tools,
         tool_choice=choice,

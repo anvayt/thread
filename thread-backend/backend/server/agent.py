@@ -36,6 +36,10 @@ MAX_STEPS = 5
 OUTLINE_LIMIT = 80
 # How many pairs of people who share something the outline lists.
 PAIRS_LIMIT = 25
+# Seconds the whole answer may take. A step normally takes about a second;
+# with less than LAST_STEP left, the model is made to answer with what it has.
+ASK_SECONDS = 15.0
+LAST_STEP = 4.0
 
 
 # ------------------------------------------------------------------ network
@@ -449,8 +453,9 @@ class Result:
 
 
 def ask(net: Network, question: str, wearer: str = "") -> Result:
-    """Answer `question` by letting the model use the tools. Raises
-    llm.LLMError when the model can't be reached or never answers."""
+    """Answer `question` by letting the model use the tools, in at most
+    ASK_SECONDS. Raises llm.LLMError when the model can't be reached, runs
+    out of time or never answers."""
     today = time.strftime("%A %d %B %Y")
     about = f"\nThe wearer's own name is {wearer}; they are never one of the people." if wearer else ""
     messages: list[dict] = [
@@ -458,16 +463,25 @@ def ask(net: Network, question: str, wearer: str = "") -> Result:
         {"role": "user", "content": f"{outline(net)}\n\nQuestion: {question}"},
     ]
     steps: list[str] = []
+    give_up = time.monotonic() + ASK_SECONDS
     for round_ in range(MAX_ROUNDS + 1):
-        last = round_ == MAX_ROUNDS
-        turn = llm.agent_turn(messages, TOOLS, finish_with="answer" if last else "")
+        left = give_up - time.monotonic()
+        if left < 1:
+            break
+        last = round_ == MAX_ROUNDS or left < LAST_STEP
+        turn = llm.agent_turn(
+            messages, TOOLS, finish_with="answer" if last else "",
+            seconds=min(llm.SECONDS["agent_turn"], left),
+        )  # fmt: skip
         final = next((c for c in turn.calls if c.name == "answer"), None)
         if final is not None:
             return _checked(net, final.args, steps)
         if not turn.calls:
             if not turn.content.strip():
                 raise llm.LLMError("The language model neither used a tool nor answered.")
-            return _in_words(net, messages, turn.content, steps)
+            return _in_words(net, messages, turn.content, steps, give_up)
+        if last:
+            break
         messages.append(
             {
                 "role": "assistant",
@@ -497,7 +511,9 @@ def ask(net: Network, question: str, wearer: str = "") -> Result:
     raise llm.LLMError("The language model didn't finish answering.")
 
 
-def _in_words(net: Network, messages: list[dict], said: str, steps: list[str]) -> Result:
+def _in_words(
+    net: Network, messages: list[dict], said: str, steps: list[str], give_up: float
+) -> Result:
     """The model answered in words rather than through `answer`. Ask it once
     to give that answer through the tool, so its people and links are named
     and checked like any other. Failing that, the words are the answer, about
@@ -508,11 +524,16 @@ def _in_words(net: Network, messages: list[dict], said: str, steps: list[str]) -
         {"role": "user", "content": "Give exactly that answer with the `answer` tool: "
                                     "the text, the people it is about, and the links."},
     ]  # fmt: skip
+    left = give_up - time.monotonic()
     try:
-        turn = llm.agent_turn(messages, TOOLS, finish_with="answer")
-        final = next((c for c in turn.calls if c.name == "answer"), None)
-        if final is not None:
-            return _checked(net, final.args, steps)
+        if left >= 1:
+            turn = llm.agent_turn(
+                messages, TOOLS, finish_with="answer",
+                seconds=min(llm.SECONDS["agent_turn"], left),
+            )  # fmt: skip
+            final = next((c for c in turn.calls if c.name == "answer"), None)
+            if final is not None:
+                return _checked(net, final.args, steps)
     except llm.LLMError:
         pass
     named = [k.name for k in net.people if _mentions(said, k.name)]

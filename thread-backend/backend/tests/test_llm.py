@@ -25,7 +25,9 @@ class ChatServer:
         self.urls: list[str] = []
         self.auth: list[str | None] = []
         self.clients: list[dict] = []
-        self.replies: list[httpx2.Response] = []
+        # The read timeout each request was sent with, in seconds.
+        self.timeouts: list[float | None] = []
+        self.replies: list[httpx2.Response | str | None] = []
 
     def will_answer(self, text: str | None, finish_reason: str = "stop") -> None:
         self.replies.append(
@@ -86,13 +88,20 @@ class ChatServer:
     def will_not_answer(self) -> None:
         self.replies.append(None)
 
+    def will_stall(self) -> None:
+        """Take the request, then answer nothing before the client gives up."""
+        self.replies.append("stall")
+
     def __call__(self, request: httpx2.Request) -> httpx2.Response:
         self.requests.append(json.loads(request.content))
         self.urls.append(str(request.url))
         self.auth.append(request.headers.get("authorization"))
+        self.timeouts.append(request.extensions.get("timeout", {}).get("read"))
         reply = self.replies.pop(0)
         if reply is None:
             raise httpx2.ConnectError("connection refused", request=request)
+        if reply == "stall":
+            raise httpx2.ReadTimeout("timed out", request=request)
         return reply
 
     @property
@@ -260,10 +269,85 @@ def test_a_refused_request_is_reported_with_the_servers_reason_and_not_retried(s
     assert len(server.requests) == 1
 
 
-def test_a_server_that_is_not_running_is_named_in_the_error(server):
+def test_a_server_that_is_not_running_is_reported_plainly_and_named_in_the_log(
+    server, caplog
+):
     server.will_not_answer()
 
-    with pytest.raises(llm.LLMError, match="Nothing answered at http://127.0.0.1:8001/v1"):
+    with pytest.raises(llm.LLMError, match="Nemotron isn't answering right now") as err:
+        REAL_TASKS["compose"](*SARAH)
+
+    assert err.value.unreachable
+    assert "nothing answered at http://127.0.0.1:8001/v1" in caplog.text
+    assert len(server.requests) == 1
+
+
+# ------------------------------------------------------------- time limits
+
+
+@pytest.mark.parametrize(
+    ("task", "args", "reply"),
+    [
+        ("compose", SARAH, '{"line": "Ask about the launch."}'),
+        ("caption_line", ("hello there", "en"), '{"language": "en", "text": "Hello there."}'),
+        ("extract_contact", ("I'm Sarah.",), '{"name": "Sarah", "org": "", "role": "", '
+                                             '"interests": [], "followups": [], "topics": []}'),
+        ("lookup_card", ("Sarah", "", "", "", "", ""), '{"headline": "Sarah", "lines": []}'),
+        ("pick_matches", ("who?", "Sarah | | | | |"), '{"names": [], "reason": "nobody"}'),
+        ("draft_followup", ("Sarah", "", "", "", "", "", "", "", ""), '{"message": "Hi Sarah."}'),
+    ],
+)  # fmt: skip
+def test_every_task_is_sent_with_its_own_time_limit(server, task, args, reply):
+    server.will_answer(reply)
+    REAL_TASKS[task](*args)
+    [sent] = server.timeouts
+    assert llm.SECONDS[task] - 1 < sent <= llm.SECONDS[task]
+
+
+def test_a_server_that_stops_answering_is_given_up_on_and_not_asked_again(server):
+    server.will_stall()
+
+    with pytest.raises(llm.LLMError, match="didn't answer within 8 seconds") as err:
+        REAL_TASKS["compose"](*SARAH)
+
+    assert err.value.unreachable
+    assert len(server.requests) == 1
+
+
+def test_a_failing_model_server_is_reported_as_down(server):
+    server.will_refuse(500, "EngineCore encountered an issue.")
+
+    with pytest.raises(llm.LLMError, match="had a problem answering \\(500\\)") as err:
+        REAL_TASKS["compose"](*SARAH)
+
+    assert err.value.unreachable
+    assert len(server.requests) == 1
+
+
+def test_a_refused_request_is_not_taken_for_a_server_that_is_down(server):
+    server.will_refuse(400, "The model `nvidia/nemotron` does not exist.")
+    with pytest.raises(llm.LLMError) as err:
+        REAL_TASKS["compose"](*SARAH)
+    assert not err.value.unreachable
+
+
+def test_the_second_try_gets_only_the_time_that_is_left(server, monkeypatch):
+    clock = iter([100.0, 100.0, 105.5])  # start, first try, second try
+    monkeypatch.setattr(llm.time, "monotonic", lambda: next(clock))
+    server.will_answer("not json")
+    server.will_answer('{"line": "Ask about the launch."}')
+
+    REAL_TASKS["compose"](*SARAH)
+
+    assert server.timeouts == [8.0, 2.5]
+
+
+def test_with_under_a_second_left_there_is_no_second_try(server, monkeypatch):
+    clock = iter([100.0, 100.0, 107.5])
+    monkeypatch.setattr(llm.time, "monotonic", lambda: next(clock))
+    server.will_answer("not json")
+
+    with pytest.raises(llm.LLMError, match="unusable answer"):
         REAL_TASKS["compose"](*SARAH)
 
     assert len(server.requests) == 1
@@ -320,3 +404,9 @@ def test_the_follow_up_draft_is_told_to_stay_on_the_record(server):
     assert "Under 80 words" in system and "no placeholders" in system
     assert "<you_owe>\nsend them the resume\n</you_owe>" in server.message("user")
     assert server.requests[0]["response_format"]["json_schema"]["name"] == "FollowUp"
+
+
+def test_an_agent_step_is_sent_with_the_time_it_is_given(server):
+    server.will_call(("answer", '{"text": "t", "people": []}'))
+    REAL_TASKS["agent_turn"]([{"role": "user", "content": "q"}], TOOLS, seconds=3.5)
+    assert server.timeouts == [3.5]

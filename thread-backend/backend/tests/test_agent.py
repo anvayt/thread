@@ -179,6 +179,32 @@ def test_after_a_few_rounds_of_looking_the_model_must_answer(net, fake):
     assert finishes == [""] * agent.MAX_ROUNDS + ["answer"]
 
 
+def test_the_steps_share_one_time_limit_and_a_late_step_must_answer(net, fake, monkeypatch):
+    clock = iter([0.0, 0.0, 12.0])  # start, first step, second step
+    monkeypatch.setattr(agent.time, "monotonic", lambda: next(clock))
+    fake.turns = [
+        llm.Turn(calls=[call("person", name="Sarah")]),
+        answer("You owe Sarah the deck.", ["Sarah Chen"]),
+    ]
+
+    agent.ask(net, "What do I owe Sarah?")
+
+    assert fake.agent_seconds == [llm.SECONDS["agent_turn"], 3.0]
+    assert [finish for _, _, finish in fake.agent_steps] == ["", "answer"]
+
+
+def test_running_out_of_time_is_an_error_the_caller_can_fall_back_from(net, fake, monkeypatch):
+    clock = iter([0.0, 0.0, 14.5])
+    monkeypatch.setattr(agent.time, "monotonic", lambda: next(clock))
+    fake.turns = [llm.Turn(calls=[call("person", name="Sarah")])]
+
+    with pytest.raises(llm.LLMError) as err:
+        agent.ask(net, "What do I owe Sarah?")
+
+    assert not err.value.unreachable
+    assert len(fake.agent_steps) == 1
+
+
 def test_an_answer_in_words_is_asked_for_again_through_the_answer_tool(net, fake):
     fake.turns = [
         llm.Turn(content="Introduce Sarah Chen to Dana Okafor: both talk payments."),

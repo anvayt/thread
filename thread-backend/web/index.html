@@ -618,6 +618,9 @@ async function call(endpoint, body, timeoutMs){
       body:JSON.stringify(body || {}), signal:ctl.signal});
     j = await r.json().catch(()=>null);
   }catch(e){
+    /* gave up waiting: the backend answered the last call, so it is slow
+       (usually Nemotron), not gone */
+    if(e && e.name === "AbortError"){ e.timedOut = true; throw e; }
     setStatus(false);
     throw e;
   }finally{ clearTimeout(t); }
@@ -630,7 +633,10 @@ async function call(endpoint, body, timeoutMs){
   return j.data || {};
 }
 /* what to tell the user when a call fails */
-function failText(e, fallback){ return e && e.fromServer && e.message ? e.message : fallback; }
+function failText(e, fallback){
+  if(e && e.timedOut) return "Nemotron is taking too long to answer. Try again in a moment.";
+  return e && e.fromServer && e.message ? e.message : fallback;
+}
 const $ = id => document.getElementById(id);
 let ONLINE = true, LIVE = true;
 function setStatus(ok){
@@ -1635,7 +1641,7 @@ async function ingest(){
   feed.prepend(wait);
   btn.disabled = true; btn.textContent = "Saving…";
   try{
-    const res = await call("ingest", {transcript}, 90000);   // waits on the language model
+    const res = await call("ingest", {transcript}, 45000);   // the backend gives up on the model after 20 s
     wait.remove();
     if(res.saved){
       await addBubble(res);
@@ -1675,7 +1681,7 @@ async function askNetwork(){
   box.classList.add("show");
   body.innerHTML = '<p class="empty">Looking…</p>';
   try{
-    const res = await call("query", {question}, 90000);
+    const res = await call("query", {question}, 40000);   // the backend gives up after about 27 s
     const rows = arr(res.matches).map(m=>{
       const name = (m && m.name) || String(m || "");
       const sub = (m && (m.org || m.last)) || "";
@@ -1934,7 +1940,7 @@ async function draftFollowup(){
   box.innerHTML = group("Follow-up", ['<span class="og">Nemotron is writing…</span>']);
   let html;
   try{
-    const res = await call("followup", {name}, 120000);
+    const res = await call("followup", {name}, 30000);   // the backend gives up after 15 s
     DRAFT = String(res.message || "");
     if(!DRAFT) throw Object.assign(new Error("The backend sent back an empty message."), {fromServer:true});
     html = group("Follow-up", [

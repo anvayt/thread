@@ -826,6 +826,10 @@ def query(body: QueryIn):
             "agent": True,
         })  # fmt: skip
     except llm.LLMError as err:
+        if err.unreachable:
+            # The simple way goes to the same server, and would only wait
+            # as long again before failing.
+            raise
         log.warning("Ask: the agent couldn't answer (%s); asking the simple way.", err)
 
     # Role and last interaction go in too: a person who has been seeded or

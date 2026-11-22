@@ -49,6 +49,10 @@ class FakeLLM:
         self.turns: list[llm.Turn] = []
         # What the agent was sent at each step: (messages, tool names, finish_with).
         self.agent_steps: list[tuple[list[dict], list[str], str]] = []
+        # How long each step was given, in seconds.
+        self.agent_seconds: list[float | None] = []
+        # Raised by the next step instead of replying, when set.
+        self.agent_error: llm.LLMError | None = None
 
     def count(self, name: str) -> int:
         return sum(1 for called, _ in self.calls if called == name)
@@ -77,11 +81,14 @@ class FakeLLM:
         self.calls.append(("draft_followup", args))
         return llm.FollowUp(message=self.message)
 
-    def agent_turn(self, messages, tools, finish_with=""):
+    def agent_turn(self, messages, tools, finish_with="", seconds=None):
         self.calls.append(("agent_turn", ()))
         self.agent_steps.append(
             ([dict(m) for m in messages], [t["function"]["name"] for t in tools], finish_with)
         )
+        self.agent_seconds.append(seconds)
+        if self.agent_error is not None:
+            raise self.agent_error
         if not self.turns:
             raise llm.LLMError("this server can't call tools")
         return self.turns.pop(0)

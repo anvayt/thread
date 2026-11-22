@@ -674,6 +674,28 @@ def test_query_is_answered_by_the_agent_with_its_links_and_steps(api, fake):
     assert "The wearer's own name is Alex" in fake.agent_steps[0][0][0]["content"]
 
 
+def test_query_with_nemotron_down_says_so_without_asking_again_the_simple_way(api, fake):
+    add_trio()
+    fake.agent_error = llm.LLMError("Nemotron isn't answering right now.", unreachable=True)
+
+    response = api.raw("query", {"question": "who invests?"})
+
+    assert response.status_code == 503
+    assert response.json() == {"ok": False, "error": "Nemotron isn't answering right now."}
+    assert fake.count("pick_matches") == 0
+
+
+def test_query_falls_back_to_the_simple_way_when_the_agent_cannot_finish(api, fake):
+    add_trio()
+    fake.agent_error = llm.LLMError("The language model didn't finish answering.")
+    fake.matches = llm.Matches(names=["Sarah Chen"], reason="Sarah works on pricing.")
+
+    got = api("query", {"question": "who works on pricing?"})
+
+    assert [m["name"] for m in got["matches"]] == ["Sarah Chen"]
+    assert fake.count("pick_matches") == 1
+
+
 # ---------------------------------------------------------------- dashboard
 
 
